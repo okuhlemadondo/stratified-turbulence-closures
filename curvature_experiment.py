@@ -234,8 +234,22 @@ def run_experiment():
     print("\n--- 3. BUDGET-MATCHED TRAVERSAL (220 GRADIENT STEPS) ---")
     lam = 150.0
 
+    def compute_f_sec(tau):
+        tau_aniso = tau[:, :, 1, 1] - tau[:, :, 2, 2]
+        tau_yz = tau[:, :, 1, 2]
+        d_dz = np.gradient(tau_aniso, mesh.z, axis=1)
+        d2_dydz = np.gradient(d_dz, mesh.y, axis=0)
+        d_dz_yz = np.gradient(tau_yz, mesh.z, axis=1)
+        d2_dz2_yz = np.gradient(d_dz_yz, mesh.z, axis=1)
+        d_dy_yz = np.gradient(tau_yz, mesh.y, axis=0)
+        d2_dy2_yz = np.gradient(d_dy_yz, mesh.y, axis=0)
+        return d2_dydz + (d2_dz2_yz - d2_dy2_yz)
+
+    f_DNS = compute_f_sec(mesh.tau_DNS)
+    norm_f_DNS = np.sqrt(np.sum(mesh.W_grid * f_DNS**2))
+
     # Path A: 100 steps in Stratum 1 + 120 steps in Stratum 2 = 220 steps
-    history_A = {"loss": [], "viol": []}
+    history_A = {"loss": [], "viol": [], "f_corr": []}
     
     # Hop e1: 0 -> 1
     s1_A = Stratum1(mesh, lambda_realiz=lam)
@@ -248,6 +262,8 @@ def run_experiment():
         l1, g1 = s1_A.loss_and_grad()
         history_A["loss"].append(float(l1))
         history_A["viol"].append(float(1.0 - check_realizability(mesh, s1_A.predict())))
+        f_a1 = compute_f_sec(s1_A.predict())
+        history_A["f_corr"].append(float(np.sum(mesh.W_grid * f_a1 * f_DNS) / (np.sqrt(np.sum(mesh.W_grid * f_a1**2)) * norm_f_DNS + 1e-12)))
         s1_A.theta = opt1_A.step(s1_A.theta, g1)
     theta_1_star = s1_A.theta.copy()
     
@@ -262,11 +278,13 @@ def run_experiment():
         l2, g2 = s2_A.loss_and_grad()
         history_A["loss"].append(float(l2))
         history_A["viol"].append(float(1.0 - check_realizability(mesh, s2_A.predict())))
+        f_a2 = compute_f_sec(s2_A.predict())
+        history_A["f_corr"].append(float(np.sum(mesh.W_grid * f_a2 * f_DNS) / (np.sqrt(np.sum(mesh.W_grid * f_a2**2)) * norm_f_DNS + 1e-12)))
         s2_A.theta = opt2_A.step(s2_A.theta, g2)
     theta_2A_star = s2_A.theta.copy()
 
     # Path B: Direct Jump 0 -> 2 (220 steps directly in Stratum 2)
-    history_B = {"loss": [], "viol": []}
+    history_B = {"loss": [], "viol": [], "f_corr": []}
     s2_B = Stratum2(mesh, lambda_realiz=lam)
     s2_B.theta = np.array([theta_0_star[0], 0.0, 0.0, 0.0])
     drift_direct = np.sqrt(np.sum(W * ((s2_B.predict() - s0.predict(theta_0_star))**2))) / norm_dns
@@ -277,6 +295,8 @@ def run_experiment():
         l2, g2 = s2_B.loss_and_grad()
         history_B["loss"].append(float(l2))
         history_B["viol"].append(float(1.0 - check_realizability(mesh, s2_B.predict())))
+        f_b = compute_f_sec(s2_B.predict())
+        history_B["f_corr"].append(float(np.sum(mesh.W_grid * f_b * f_DNS) / (np.sqrt(np.sum(mesh.W_grid * f_b**2)) * norm_f_DNS + 1e-12)))
         s2_B.theta = opt2_B.step(s2_B.theta, g2)
     theta_2B_star = s2_B.theta.copy()
 
@@ -389,33 +409,39 @@ def plot_comprehensive_results(hist_A, hist_B, sweep, kappas, theta_A, theta_B, 
     ax1.legend(loc='upper right', fontsize=8.5, frameon=True)
 
     # --------------------------------------------------------------------------
-    # Panel (b): Realizability Mechanics (Inherited Repair vs Manufactured Excursion)
+    # Panel (b): Realizability Dynamics (Scaffold Relocation vs Deployed Excursion)
     # --------------------------------------------------------------------------
     ax2 = axes[0, 1]
-    ax2.plot(steps, np.array(hist_A["viol"]) * 100, label='Path A: Inherited Monotonic Repair', 
+    ax2.plot(steps[:100], np.array(hist_A["viol"][:100]) * 100, 
+             label='Path A (Stratum 1 Scaffold: Tolerates Up To 6.08%)', 
+             color='#1b9e77', linewidth=2.0, linestyle=':')
+    ax2.plot(steps[100:], np.array(hist_A["viol"][100:]) * 100, 
+             label='Path A (Stratum 2 Deployed: Monotone Repair to 1.04%)', 
              color='#1b9e77', linewidth=2.4)
-    ax2.plot(steps, np.array(hist_B["viol"]) * 100, label='Path B: Manufactured Transient Excursion', 
+    ax2.plot(steps, np.array(hist_B["viol"]) * 100, 
+             label='Path B (Stratum 2 Deployed: Manufactured Excursion)', 
              color='#d95f02', linewidth=2.2, linestyle='--')
     
-    ax2.axvspan(15, 35, color='#d95f02', alpha=0.15, label='Manufactured Violation Excursion (0% -> 2.0% -> 1.0%)')
+    ax2.axvspan(15, 35, color='#d95f02', alpha=0.15, label='Path B Excursion (0% -> 2.0% -> 1.0%)')
+    ax2.axvline(100, color='#1b9e77', linestyle='--', alpha=0.6)
     ax2.set_xlabel('Total Optimization Steps (N = 220)', fontsize=11, fontweight='bold')
     ax2.set_ylabel(r'Unrealizable Domain Fraction $(\tau \not\succeq 0)$ [%]', fontsize=11, fontweight='bold')
-    ax2.set_title('(b) Realizability Dynamics: Curriculum vs Direct Jump', fontsize=12, fontweight='bold')
+    ax2.set_title('(b) Realizability Dynamics: Scaffold Relocation vs Deployed Excursion', fontsize=12, fontweight='bold')
     ax2.grid(True, ls="--", alpha=0.3)
-    ax2.legend(loc='upper right', fontsize=9, frameon=True)
+    ax2.legend(loc='upper right', fontsize=8.5, frameon=True)
 
     # --------------------------------------------------------------------------
-    # Panel (c): Penalty Sensitivity Sweep (λ in {0, 150, 1500})
+    # Panel (c): Penalty Modulation Sweep (λ in {0, 150, 1500})
     # --------------------------------------------------------------------------
     ax3 = axes[1, 0]
     lam_keys = ["0.0", "150.0", "1500.0"]
-    lam_labels = [r'$\lambda = 0$' + '\n(Unpenalized)', r'$\lambda = 150$' + '\n(Baseline)', r'$\lambda = 1500$' + '\n(Stiff Barrier)']
+    lam_labels = [r'$\lambda = 0$' + '\n(Unconstrained)', r'$\lambda = 150$' + '\n(Baseline)', r'$\lambda = 1500$' + '\n(Stiff Barrier)']
     peak_viols = [sweep[k]["peak_viol_B"] * 100 for k in lam_keys]
     end_viols = [sweep[k]["end_viol_B"] * 100 for k in lam_keys]
     
     x_c = np.arange(len(lam_keys))
     w = 0.35
-    ax3.bar(x_c - w/2, peak_viols, w, label='Path B Peak Manufactured Violation', color='#d95f02', alpha=0.85, edgecolor='black')
+    ax3.bar(x_c - w/2, peak_viols, w, label='Path B Peak Excursion (Trajectory-Mediated)', color='#d95f02', alpha=0.85, edgecolor='black')
     ax3.bar(x_c + w/2, end_viols, w, label='Path B Settled Final Violation', color='#7570b3', alpha=0.85, edgecolor='black')
     
     for i in range(len(lam_keys)):
@@ -425,10 +451,10 @@ def plot_comprehensive_results(hist_A, hist_B, sweep, kappas, theta_A, theta_B, 
     ax3.set_xticks(x_c)
     ax3.set_xticklabels(lam_labels, fontsize=10, fontweight='bold')
     ax3.set_ylabel(r'Unrealizable Domain Fraction [%]', fontsize=11, fontweight='bold')
-    ax3.set_title(r'(c) Penalty Sensitivity Sweep ($\lambda_{\rm realiz}$ Effect)', fontsize=12, fontweight='bold')
-    ax3.set_ylim(0, max(peak_viols) * 1.3)
+    ax3.set_title(r'(c) Penalty Modulation Sweep: Excursion is Trajectory-Mediated', fontsize=12, fontweight='bold')
+    ax3.set_ylim(0, max(peak_viols) * 1.35)
     ax3.grid(axis='y', ls="--", alpha=0.3)
-    ax3.legend(loc='upper right', fontsize=9, frameon=True)
+    ax3.legend(loc='upper right', fontsize=8.5, frameon=True)
 
     # --------------------------------------------------------------------------
     # Panel (d): Gram Matrix Conditioning (The Mechanism)
