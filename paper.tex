@@ -1,0 +1,841 @@
+% ============================================================================
+% Geometrizing the Design Space of Turbulence Closures
+% Stratified Atlases, Canonical Transports, and Physical Curricula
+% ============================================================================
+\documentclass[preprint,aps,prb,longbibliography,superscriptaddress]{revtex4-2}
+
+\usepackage{amsmath,amssymb,amsthm}
+\usepackage{booktabs}
+\usepackage{graphicx}
+\usepackage{siunitx}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{xcolor}
+\usepackage{hyperref}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  citecolor=blue!60!black,
+  urlcolor=blue!60!black,
+}
+
+% --- Custom commands ---
+\newcommand{\bx}{\mathbf{x}}
+\newcommand{\bU}{\mathbf{U}}
+\newcommand{\bI}{\mathbf{I}}
+\newcommand{\Tr}{\operatorname{Tr}}
+\newcommand{\dR}{\delta_R}
+\newcommand{\fsec}{f_{\text{sec}}}
+\newcommand{\tDNS}{\tau_{\text{DNS}}}
+
+\begin{document}
+
+% ============================================================================
+\title{Geometrizing the Design Space of Turbulence Closures:\\
+Stratified Atlases, Canonical Transports, and Physical Curricula}
+
+\author{Okuhle Madondo}
+\affiliation{Department of Mechanical Engineering / Machine Learning Research Group}
+\email{okuhlemadondo@users.noreply.github.com}
+
+\date{\today}
+
+% ============================================================================
+\begin{abstract}
+Data-driven turbulence closure modeling faces an acute discrete--continuous
+tension: selecting which algebraic or differential tensor basis terms to
+incorporate is a discrete structural choice, while calibrating their
+respective scalar coefficients is a continuous optimization problem. Standard
+machine learning workflows treat this configuration space either as an
+uncoupled combinatorial graph or as an unstructured flat parameter space,
+resulting in catastrophic loss of prior calibration, optimization
+instabilities, and unphysical realizability violations.
+
+In this work, we formalize the space of turbulence closures as a
+\emph{Stratified Design Atlas}---a collection of smooth manifolds (strata) of
+varying dimensionality connected by canonical transport operators. Using the
+canonical problem of turbulent flow through a square duct
+($\mathrm{Re}_\tau \approx 360$) exhibiting secondary motion of the Prandtl
+second kind, we demonstrate the power of this geometric framework:
+\textit{(i)}~the linear Boussinesq stratum possesses an exact rank deficiency
+($\cos\phi_{\mathrm{sec}} \approx 0$) preventing it from generating the
+normal stress anisotropy $(\tau_{yy} - \tau_{zz})$ required to drive
+secondary corner vortices, whereas quadratic Pope strata achieve full
+controllability ($\cos\phi_{\mathrm{sec}} = 1.0$);
+\textit{(ii)}~exact canonical transport operators embed calibrated lower-order
+models into higher-order strata with provably zero realization drift
+($\dR = 0.0000$);
+\textit{(iii)}~under budget-matched controls ($N = 220$ gradient steps),
+sequential traversal converts an ill-conditioned joint calibration
+($\kappa = 64.10$) into a sequence of well-conditioned subproblems
+($\kappa = 14.24$), eliminating a transient $2.00\%$ realizability excursion
+and a $2\times$ optimization loss rebound exhibited by direct calibration;
+\textit{(iv)}~across penalty sweeps
+($\lambda_{\mathrm{realiz}} \in [0, 1500]$), the excursion is shown to be
+trajectory-mediated and penalty-modulated, while the semantic realization
+defect remains negligible
+($C_{AB} \approx \num{6.93e-6}$).
+We outline the theoretical horizon for non-nested, horizontal structural edits
+where learned connections replace exact zero-padding embeddings.
+\end{abstract}
+
+\maketitle
+
+% ============================================================================
+\section{Introduction}\label{sec:intro}
+% ============================================================================
+
+Turbulence closure modeling for Reynolds-Averaged Navier--Stokes (RANS)
+equations remains one of the foundational open challenges in computational
+fluid dynamics. The Reynolds stress tensor
+$\tau_{ij} = \overline{u_i' u_j'}$ represents the statistical effect of
+turbulent fluctuations on the mean momentum field. For decades, practical
+engineering CFD has relied on linear eddy-viscosity models governed by the
+Boussinesq hypothesis~\cite{Boussinesq1877}:
+\begin{equation}\label{eq:boussinesq}
+  \tau_{ij} - \tfrac{2}{3}k\,\delta_{ij} = -2\,\nu_t\, S_{ij}\,,
+\end{equation}
+where $k$ is the turbulent kinetic energy, $\nu_t$ is the scalar eddy
+viscosity, and $S_{ij} = \tfrac{1}{2}(\partial_j U_i + \partial_i U_j)$ is
+the mean strain rate tensor.
+
+While computationally robust, the Boussinesq hypothesis fails qualitatively in
+complex strain fields---most notoriously in non-circular duct flows, where
+turbulent secondary motion of the second kind~\cite{Prandtl1926} is driven
+exclusively by Reynolds normal stress anisotropy
+$(\tau_{yy} - \tau_{zz})$ and cross-stream shear stress $\tau_{yz}$. Linear
+models predict identical normal stresses in the cross-plane
+($\tau_{yy} = \tau_{zz}$), completely suppressing corner circulation.
+
+To overcome these deficiencies, higher-order non-linear eddy viscosity models
+\cite{Pope1975,Craft1996,Wallin2000} and data-driven symbolic formulations
+have been developed. However, modern automated model discovery frameworks
+encounter severe fundamental hurdles:
+\begin{itemize}
+  \item \textit{The Combinatorial Cliff.} Searching over discrete combinations
+    of tensor invariants using genetic programming or reinforcement learning
+    treats candidate models as isolated nodes, discarding previous calibration
+    work and re-optimizing continuous parameters from scratch at high
+    computational cost.
+  \item \textit{Catastrophic Parameter Drift.} Ad-hoc warm-starting (e.g.,
+    initializing new coefficients to zero or random values without geometric
+    transport) causes wild parameter drift, frequently colliding with the
+    boundaries of the Lumley realizability
+    triangle~\cite{Schumann1977,Lumley1978}.
+  \item \textit{Ill-Conditioned Coupling.} Jointly calibrating all higher-order
+    tensor coefficients simultaneously introduces stiff, ill-conditioned
+    optimization landscapes where cross-coupling between basis elements
+    degrades gradient descent dynamics.
+\end{itemize}
+
+\subsection{The Geometrization Thesis}\label{sec:thesis}
+
+We propose that the space of physical models should not be viewed as a
+discrete collection of equations, nor as a single flat continuous parameter
+space. Instead, it is a \emph{Stratified Design Atlas}
+$\mathcal{M} = \bigsqcup_{s \in \mathcal{S}} \mathcal{M}_s$:
+\begin{enumerate}
+  \item \textit{Strata as Smooth Manifolds.} Each model family (e.g., linear
+    Boussinesq, quadratic Pope, cubic Pope) forms a smooth stratum
+    $\mathcal{M}_s$ endowed with continuous coordinates
+    $\theta \in \Theta_s \subseteq \mathbb{R}^{d_s}$.
+  \item \textit{Boundaries and Invariants.} Every stratum is bounded by
+    physical realizability constraints
+    $\mathcal{R}_s = \{\theta \in \Theta_s :
+    \tau(\bx;\theta) \succeq 0 \;\forall \bx \in \Omega\}$.
+  \item \textit{Canonical Transports.} Structural edits (adding or removing
+    terms) correspond to directed edges $e\colon s \to s'$ in the atlas,
+    equipped with transport operators $T_e\colon \Theta_s \to \Theta_{s'}$
+    that map calibrated parameters between strata.
+\end{enumerate}
+
+When transport is canonical, structural edits preserve physical predictions
+exactly at the moment of transition---meaning the realization drift
+$\dR = 0$. Furthermore, traversing intermediate strata acts as a
+\emph{physical curriculum}, resolving dominant flow features in
+lower-dimensional, well-conditioned manifolds before exposing the model to the
+ill-conditioned interactions of higher-order terms.
+
+% ============================================================================
+\section{Mathematical Formulation}\label{sec:math}
+% ============================================================================
+
+\subsection{Governing Equations and Secondary Flow Mechanics}
+\label{sec:governing}
+
+Consider steady, incompressible turbulent flow through a straight square duct
+of width $h$ aligned with the $x$-axis. The mean velocity field is
+$\bU = (U(y,z),\, V(y,z),\, W(y,z))$. The cross-stream momentum equations
+govern the secondary flow $(V, W)$. Defining the streamwise mean vorticity
+\begin{equation}
+  \omega_x = \frac{\partial W}{\partial y} - \frac{\partial V}{\partial z}\,,
+\end{equation}
+the steady streamwise vorticity transport equation reduces to
+\begin{equation}\label{eq:vorticity}
+  V \frac{\partial \omega_x}{\partial y}
+  + W \frac{\partial \omega_x}{\partial z}
+  = \nu \nabla^2 \omega_x + \fsec(\bx)\,,
+\end{equation}
+where the secondary vorticity driving force $\fsec$ is defined entirely by
+spatial derivatives of the Reynolds stresses:
+\begin{equation}\label{eq:fsec}
+  \fsec(\bx) =
+  \underbrace{\frac{\partial^2}{\partial y\,\partial z}
+    (\tau_{yy} - \tau_{zz})}_{\text{Normal stress anisotropy}}
+  +\;
+  \underbrace{\left(\frac{\partial^2}{\partial z^2}
+    - \frac{\partial^2}{\partial y^2}\right)\tau_{yz}}_{\text{Cross-plane shear stress}}\,.
+\end{equation}
+
+For isotropic or linear eddy viscosity models,
+$\tau_{yy} - \tau_{zz} \propto S_{yy} - S_{zz} \equiv 0$ in the cross-plane,
+rendering $\fsec \equiv 0$ (or anti-aligned due to wall boundary effects). In
+real turbulence, an eight-vortex secondary circulation pattern develops,
+transporting high-momentum fluid toward the corners along the corner bisectors
+and returning toward the duct center along the wall bisectors.
+
+\subsection{Tensor Integrity Basis and Stratified Hierarchy}
+\label{sec:basis}
+
+Following Pope~\cite{Pope1975}, the deviatoric Reynolds stress anisotropy
+$a_{ij} = \tau_{ij}/k - \tfrac{2}{3}\delta_{ij}$ can be expanded in a
+complete integrity basis of the non-dimensional symmetric strain rate
+$S_{ij}^* = (k/\epsilon)\,S_{ij}$ and anti-symmetric rotation rate
+$\Omega_{ij}^* = (k/\epsilon)\,\Omega_{ij}$:
+\begin{equation}\label{eq:pope_expansion}
+  a_{ij} = \sum_{n=1}^{N} c_n(\bI)\, T_{ij}^{(n)}\,.
+\end{equation}
+In two-dimensional mean strain fields (such as the duct cross-section
+$(y,z)$), the expansion truncates cleanly into three nested strata.
+
+\paragraph{Stratum~0 ($\mathcal{M}_0$, Linear Boussinesq, $d_0 = 1$).}
+\begin{equation}\label{eq:stratum0}
+  \tau^{(0)}(\bx;\theta) = \tfrac{2}{3}k\,I + \theta_0\, T^{(1)},
+  \qquad
+  T^{(1)} = -\frac{2k}{\omega}\, S\,,
+\end{equation}
+where $\theta_0 = C_\mu \approx 0.09$.
+
+\paragraph{Stratum~1 ($\mathcal{M}_1$, Quadratic Pope, $d_1 = 3$).}
+\begin{equation}\label{eq:stratum1}
+  \tau^{(1)}(\bx;\theta) = \tfrac{2}{3}k\,I
+  + \theta_0\, T^{(1)}
+  + \theta_1\, T^{(2)}
+  + \theta_2\, T^{(3)}\,,
+\end{equation}
+with non-linear quadratic invariants scaled by Pope's turbulent timescale
+$\tau_t = 1/(C_\mu\omega)$:
+\begin{equation}\label{eq:T2T3}
+  T^{(2)} = \frac{k}{(C_\mu\omega)^2}
+    \Bigl(S^2 - \tfrac{1}{3}\Tr(S^2)\,I\Bigr),
+  \quad
+  T^{(3)} = \frac{k}{(C_\mu\omega)^2}
+    \bigl(S\Omega - \Omega S\bigr).
+\end{equation}
+
+\paragraph{Stratum~2 ($\mathcal{M}_2$, Cubic Pope, $d_2 = 4$).}
+\begin{equation}\label{eq:stratum2}
+  \tau^{(2)}(\bx;\theta) = \tfrac{2}{3}k\,I
+  + \sum_{i=0}^{3} \theta_i\, T^{(i+1)}\,,
+\end{equation}
+where $T^{(4)}$ is the symmetric, traceless cubic invariant tensor:
+\begin{equation}\label{eq:T4}
+  T^{(4)} = \frac{k}{(C_\mu\omega)^3}
+    \bigl(S^2\Omega - \Omega S^2\bigr).
+\end{equation}
+
+\subsection{Controllability Metrics and Canonical Transports}
+\label{sec:controllability}
+
+To quantify whether a stratum $\mathcal{M}_s$ can represent the secondary flow
+driving force, we introduce the \emph{Controllability Alignment Metric}:
+\begin{equation}\label{eq:controllability}
+  \cos\phi_{\mathrm{sec}}(\mathcal{M}_s) =
+  \sup_{\theta \in \Theta_s}
+  \frac{\langle \fsec(\tau(\theta)),\;
+        \fsec(\tDNS) \rangle_{L^2(\Omega)}}
+       {\|\fsec(\tau(\theta))\|_{L^2(\Omega)}\;
+        \|\fsec(\tDNS)\|_{L^2(\Omega)}}\,.
+\end{equation}
+
+For nested inclusions $\mathcal{M}_s \subset \mathcal{M}_{s'}$
+($d_s < d_{s'}$), we define the canonical \emph{Zero-Padding Transport
+Operator} $T_e\colon \Theta_s \to \Theta_{s'}$:
+\begin{equation}\label{eq:transport}
+  T_e(\theta) = \bigl[\theta_0,\, \theta_1,\, \dotsc,\,
+    \theta_{d_s-1},\,
+    \underbrace{0,\, \dotsc,\, 0}_{d_{s'}-d_s}\bigr].
+\end{equation}
+The \emph{Realization Drift} $\dR$ measures the semantic perturbation induced
+by transport:
+\begin{equation}\label{eq:drift}
+  \dR(T_e, \theta)
+  = \frac{\|\tau^{(s')}(T_e(\theta)) - \tau^{(s)}(\theta)\|_{L^2(\Omega)}}
+         {\|\tDNS\|_{L^2(\Omega)}}
+  \equiv 0\,,
+\end{equation}
+which vanishes identically for linear basis expansions.
+
+\subsection{Composition Defect and Optimization Landscape}
+\label{sec:defect}
+
+Given two alternative paths between Stratum~0 and Stratum~2:
+\begin{itemize}
+  \item \textit{Path~A (Sequential Curriculum):}
+    $\mathcal{M}_0 \xrightarrow{e_1} \mathcal{M}_1
+    \xrightarrow{e_2} \mathcal{M}_2$
+  \item \textit{Path~B (Direct Joint Calibration):}
+    $\mathcal{M}_0 \xrightarrow{\;\text{direct}\;}
+    \mathcal{M}_2$
+\end{itemize}
+we define the \emph{Semantic Realization Defect} (composition defect):
+\begin{equation}\label{eq:CAB}
+  C_{AB}
+  = \frac{\|\tau^{(2)}(\theta_{2,A}^*) -
+          \tau^{(2)}(\theta_{2,B}^*)\|_{L^2(\Omega)}}
+         {\|\tDNS\|_{L^2(\Omega)}}\,,
+\end{equation}
+and the parameter-space distance
+$\|\theta_{2,A}^* - \theta_{2,B}^*\|_2$.
+
+Because $\tau$ depends linearly on $\theta$ and the task loss
+$L_{\text{task}}(\theta) = \tfrac{1}{2}\int_\Omega
+\|\tau(\theta) - \tDNS\|_F^2\,dA$ is quadratic, the loss Hessian is constant
+and equals the spatial \emph{Gram matrix}
+$G \in \mathbb{R}^{d \times d}$:
+\begin{equation}\label{eq:gram}
+  G_{ij} = \int_\Omega \Tr\bigl(T^{(i)}(\bx)\, T^{(j)}(\bx)\bigr)\,dA\,.
+\end{equation}
+The conditioning of $G$ completely governs the gradient descent dynamics on the
+unconstrained task loss.
+
+To enforce physical validity, optimizations incorporate a realizability barrier
+penalty:
+\begin{equation}\label{eq:penalty}
+  L(\theta) = L_{\text{task}}(\theta)
+  + \lambda_{\mathrm{realiz}}
+    \int_\Omega \max\!\bigl(0,\, -\lambda_{\min}(\tau(\bx;\theta))\bigr)^2\,dA\,,
+\end{equation}
+where $\lambda_{\min}$ denotes the smallest eigenvalue of the local stress
+tensor $\tau(\bx)$.
+
+% ============================================================================
+\section{Experiment~1: Two-Tiered Controllability and Exact Base Transport}
+\label{sec:exp1}
+% ============================================================================
+
+We discretized a square duct quadrant
+$(y,z) \in [0,h] \times [0,h]$ at $\mathrm{Re}_\tau \approx 360$ on a
+$48 \times 48$ non-uniform grid clustered near the walls using hyperbolic
+tangent stretching ($y_1^+ \approx 0.8$). The mean flow and secondary
+streamfunction were synthesized to reproduce benchmark DNS
+profiles~\cite{Pinelli2010}.
+
+\begin{table}[t]
+\caption{Controllability alignment results for the square duct quadrant.
+  $\cos\phi_{\mathrm{sec}}$ quantifies the maximum achievable alignment
+  between the model's secondary vorticity forcing and the DNS
+  reference.}\label{tab:controllability}
+\begin{ruledtabular}
+\begin{tabular}{lll}
+  Stratum & $\cos\phi_{\mathrm{sec}}$ & Physical interpretation \\
+  \midrule
+  Stratum~0 (Linear, $d=1$)
+    & $\num{1.15e-4} \approx 0$
+    & Exact algebraic rank deficiency; \\
+    & & cannot generate $(\tau_{yy} - \tau_{zz})$ anisotropy \\[4pt]
+  Stratum~1 (Quadratic, $d=3$)
+    & $1.000000$
+    & Controllable; normal stress dipole \\
+    & & fully spans the secondary driving subspace \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+Calibrating Stratum~0 yields
+$\theta_0^* = [C_\mu^*] = [0.089849]$. Applying canonical transport
+$T_{e_1}(\theta_0^*) = [0.089849,\, 0.0,\, 0.0]$ embeds the linear model
+into Stratum~1 with exact zero drift:
+\begin{equation}
+  \dR = 0.000000 \times 10^0\,.
+\end{equation}
+
+% ============================================================================
+\section{Experiment~2: The Physical Curriculum vs.\ Direct Joint Calibration}
+\label{sec:exp2}
+% ============================================================================
+
+To rigorously test whether sequential traversal provides geometric advantages
+over direct optimization, we implemented an unmodeled wall stress perturbation
+$0.015\,(k/\omega^2)\sin(\pi y)\sin(\pi z)\,S^2$ and an amplified cubic
+target $c_{3,\mathrm{true}} = 0.060$, ensuring no stratum achieves zero loss
+and creating a genuinely misspecified target.
+
+Both paths were evaluated under a strict \emph{budget-matched control} of
+$N = 220$ gradient steps using Adam
+($\alpha = \num{2e-3}$, $\beta_1 = 0.9$, $\beta_2 = 0.999$):
+\begin{itemize}
+  \item \textit{Path~A:} 100 steps in Stratum~1
+    $\xrightarrow{e_2\;(\dR = 0)}$ 120~steps in Stratum~2
+    ($= 220$ total gradient steps).
+  \item \textit{Path~B:} 220 steps directly in Stratum~2 initialized from
+    $T_{\mathrm{direct}}(\theta_0^*) = [0.089849,\, 0,\, 0,\, 0]$.
+\end{itemize}
+
+\subsection{The Physical Stakes at the Shared Origin}
+\label{sec:origin}
+
+At Step~0, both paths originate at the base Boussinesq model $\theta_0^*$.
+Tracking the secondary vorticity driving force $\fsec$ reveals the exact
+physical mechanism of Boussinesq failure:
+\begin{equation}\label{eq:rho_origin}
+  \rho(f^{(0)},\, f_{\mathrm{DNS}})
+  = \frac{\langle f^{(0)},\, f_{\mathrm{DNS}} \rangle_{L^2}}
+         {\|f^{(0)}\|_{L^2}\;\|f_{\mathrm{DNS}}\|_{L^2}}
+  = -0.15732\,,
+\end{equation}
+with $29.38\%$ of the quadrant cross-section carrying reversed secondary
+forcing.
+
+This is a critical physical finding: the linear model does not merely omit
+secondary motion---it actively produces anti-aligned vorticity forcing in the
+near-wall corner regions. Because both paths share this origin, reversed
+circulation is an intrinsic property of the Boussinesq base model,
+establishing the baseline physical challenge that both paths must resolve.
+
+\subsection{The Analytical Mechanism: Gram Matrix Conditioning}
+\label{sec:gram_results}
+
+Computing the domain Gram matrices reveals why joint calibration is inherently
+unstable:
+
+\begin{table}[t]
+\caption{Gram matrix spectra and condition numbers across the three strata.
+  The $4.5\times$ conditioning deterioration from Stratum~1 to Stratum~2 is
+  driven by the non-zero cross-coupling
+  $\langle T^{(3)}, T^{(4)} \rangle = \num{-1.618e-5}$.}
+\label{tab:gram}
+\begin{ruledtabular}
+\begin{tabular}{llS[table-format=2.2]}
+  Stratum & Eigenvalues $\lambda(G)$ & {$\kappa(G)$} \\
+  \midrule
+  Stratum~0 ($d=1$)
+    & $[0.00482]$
+    & 1.00 \\[2pt]
+  Stratum~1 ($d=3$)
+    & $[0.00482,\; 0.00171,\; 0.00034]$
+    & 14.24 \\[2pt]
+  Stratum~2 ($d=4$)
+    & $[0.00482,\; 0.00171,\; 0.00034,\; \num{7.52e-5}]$
+    & 64.10 \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+Due to duct symmetry reflections, $T^{(1)}$ and $T^{(2)}$ are orthogonal to
+$T^{(3)}$ and $T^{(4)}$. However,
+$T^{(3)} = S\Omega - \Omega S$ and $T^{(4)} = S^2\Omega - \Omega S^2$ share a
+non-zero cross-correlation. This cross-coupling collapses the smallest
+eigenvalue of $G_2$ to $\num{7.52e-5}$, producing a
+$4.5\times$ deterioration in condition number
+($\kappa = 14.24 \to 64.10$).
+
+Consequently, sequential transport operates as an \emph{analytical physical
+curriculum}: it solves the well-conditioned $\kappa = 14.24$ subproblem first,
+decoupling the primary normal stress anisotropy from the cubic interaction.
+Path~B attempts to optimize across all coupled directions simultaneously along
+an elongated, ill-conditioned ravine.
+
+\subsection{Traversal Dynamics: Rebounds, Excursions, and Deployed Repair}
+\label{sec:dynamics}
+
+Table~\ref{tab:telemetry} presents the audited telemetry extracted directly
+from the committed experiment database.
+Figure~\ref{fig:curvature_results} displays the corresponding four-panel
+visualization.
+
+\begin{table*}[t]
+\caption{Audited traversal telemetry. All values are extracted from the
+  committed database
+  (\texttt{results\_curvature\_experiment.json}).
+  Forcing alignment $\rho = \langle \fsec(\tau),\, \fsec(\tDNS) \rangle_{L^2}
+  / (\|\fsec(\tau)\|_{L^2}\,\|\fsec(\tDNS)\|_{L^2})$.
+  ``Reversed domain'' is the fraction of the quadrant where
+  $\fsec(\tau) \cdot \fsec(\tDNS) < 0$.}\label{tab:telemetry}
+\begin{ruledtabular}
+\begin{tabular}{llccccc}
+  & Stage
+  & Step
+  & Loss $L(\theta)$
+  & Violation $(\tau \not\succeq 0)$
+  & Forcing $\rho$
+  & Reversed domain \\
+  \midrule
+  & Shared origin (Stratum~0)
+    & 0
+    & $\num{1.2264e-7}$
+    & $0.00\%$
+    & $-0.15732$
+    & $29.38\%$ \\
+  \midrule
+  \multirow{4}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~A}}
+  & Stratum~1 scaffold
+    & 50
+    & $\num{5.0321e-9}$
+    & $5.12\%$
+    & $+0.29338$
+    & $20.57\%$ \\
+  & Stratum~1 scaffold end
+    & 99
+    & $\num{4.7298e-9}$
+    & $5.64\%$
+    & $+0.29372$
+    & $20.36\%$ \\
+  & Hop $e_2$ ($\dR = 0$)
+    & 100
+    & $\num{4.7300e-9}$
+    & $5.64\%$
+    & $+0.29372$
+    & $20.44\%$ \\
+  & Deployed repair
+    & 105
+    & $\num{3.3522e-9}$
+    & $3.12\%$
+    & $+0.65409$
+    & $8.12\%$ \\
+  & Deployed repair
+    & 120
+    & $\num{1.4889e-9}$
+    & $1.22\%$
+    & $+0.98791$
+    & $2.30\%$ \\
+  & Deployed repair
+    & 150
+    & $\num{1.3552e-9}$
+    & $0.95\%$
+    & $+0.99946$
+    & $1.56\%$ \\
+  & Final settled state
+    & 219
+    & $\num{1.3412e-9}$
+    & $1.04\%$
+    & $+0.99918$
+    & $1.65\%$ \\
+  \midrule
+  \multirow{4}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~B}}
+  & Fast shape alignment
+    & 1
+    & $\num{1.1058e-7}$
+    & $0.00\%$
+    & $+0.94147$
+    & $10.11\%$ \\
+  & Onset of excursion
+    & 20
+    & $\num{2.7765e-9}$
+    & $1.56\%$
+    & $+0.95538$
+    & $2.91\%$ \\
+  & 1st rebound / peak
+    & 25
+    & $\num{3.8512e-9}$
+    & $2.00\%$
+    & $+0.96519$
+    & $2.73\%$ \\
+  & Mid-run recovery
+    & 45
+    & $\num{2.1055e-9}$
+    & $0.69\%$
+    & $+0.99777$
+    & $2.08\%$ \\
+  & 2nd rebound / dip
+    & 68
+    & $\num{1.4276e-9}$
+    & $1.30\%$
+    & $+0.99395$
+    & $1.91\%$ \\
+  & Final settled state
+    & 219
+    & $\num{1.3412e-9}$
+    & $1.04\%$
+    & $+0.99919$
+    & $1.69\%$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table*}
+
+\begin{figure*}[t]
+  \centering
+  \includegraphics[width=\linewidth]{curvature_results.png}
+  \caption{Four-panel visualization of the budget-matched traversal experiment
+    ($N = 220$ gradient steps, $\lambda_{\mathrm{realiz}} = 150$).
+    \textbf{(a)}~Loss trajectories: Path~A transitions smoothly at step~100
+    ($\dR = 0$); Path~B exhibits a transient rebound at steps~21--27
+    (highlighted).
+    \textbf{(b)}~Realizability dynamics: Path~A tolerates violations up to
+    $5.64\%$ in the non-deployed Stratum~1 scaffold (dotted), then repairs
+    essentially monotonically upon deployment (solid); Path~B manufactures a
+    $2.00\%$ excursion in the deployed stratum.
+    \textbf{(c)}~Penalty modulation sweep: the excursion is largest at
+    $\lambda = 0$ ($2.78\%$), proving it is trajectory-mediated and
+    penalty-modulated.
+    \textbf{(d)}~Gram matrix condition numbers:
+    $\kappa = 1.0 \to 14.2 \to 64.1$, with the $4.5\times$ jump isolated to
+    the $\langle T^{(3)}, T^{(4)} \rangle$ cross-coupling.}
+  \label{fig:curvature_results}
+\end{figure*}
+
+\paragraph{Path~B's rebound is coupled to boundary collision.}
+Between steps~15 and~35, Path~B's unconstrained gradient step along the
+ill-conditioned Gram directions drives the model outside the Lumley triangle,
+manufacturing a $2.00\%$ realizability violation. At steps~21--27, the
+trajectory collides with the penalty wall, causing the loss to rebound by
+nearly $2\times$ (from $\num{2.78e-9}$ to $\num{3.85e-9}$). A secondary
+rebound occurs at step~68, where violation spikes back to $1.30\%$, triggering
+a measurable degradation in forcing alignment ($\rho$ dips from $0.99777$ to
+$0.99395$).
+
+\paragraph{The scaffold relocation principle.}
+Path~A's Stratum~1 scaffold phase peaks at $5.64\%$ violation and holds
+${\sim}\,20.4\%$ reversed forcing. This is an intentional feature of the
+architecture: the curriculum tolerates violations in an un-deployed scaffold
+stratum where they are computationally harmless. Upon Hop~$e_2$ ($\dR = 0$),
+the deployed Stratum~2 model repairs essentially monotonically
+($5.64\% \to 3.12\% \to 1.22\% \to 1.04\%$), while forcing correlation locks
+in smoothly from $0.294 \to 0.988 \to 0.999+$ with zero loss rebounds and
+zero fidelity dips.
+
+\paragraph{Dynamical quality over synthetic speed.}
+Under budget matching, Path~B reaches the asymptotic loss plateau by
+step~${\sim}\,110$, while Path~A reaches it by step~${\sim}\,135$. In an
+offline surrogate optimization, direct calibration is marginally faster in step
+count. However, in an online CFD setting where each iterate is evaluated in a
+coupled Navier--Stokes solver, Path~B's manufactured negative normal stress
+eigenvalues ($\tau \not\succeq 0$) and loss rebounds present severe numerical
+instability risks. The curriculum delivers superior dynamical quality.
+
+\subsection{Penalty Modulation Sweep and the Composition Defect}
+\label{sec:sweep}
+
+To confirm that the excursion is an intrinsic feature of the unconstrained
+trajectory rather than an artifact of $\lambda_{\mathrm{realiz}}$, we
+conducted a sweep across $\lambda \in \{0, 150, 1500\}$
+(Table~\ref{tab:sweep}).
+
+\begin{table}[t]
+\caption{Realizability penalty modulation sweep. The excursion is largest at
+  $\lambda = 0$ (unconstrained), proving that the direct trajectory naturally
+  traverses unrealizable parameter space. The penalty barrier modulates the
+  excursion magnitude and converts it into an optimization
+  setback.}\label{tab:sweep}
+\begin{ruledtabular}
+\begin{tabular}{lS[table-format=1.2]S[table-format=1.2]l}
+  Barrier weight $\lambda$
+    & {Peak viol.\ (\%)}
+    & {End viol.\ (\%)}
+    & $C_{AB}$ \\
+  \midrule
+  $\lambda = 0$ (unconstrained)
+    & 2.78 & 1.48 & $\num{2.38e-5}$ \\
+  $\lambda = 150$ (baseline)
+    & 2.00 & 1.04 & $\num{6.93e-6}$ \\
+  $\lambda = 1500$ (stiff barrier)
+    & 1.30 & 0.52 & $\num{8.81e-6}$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+\paragraph{Excursion is trajectory-mediated.}
+At $\lambda = 0$, the excursion is largest ($2.78\%$). The unconstrained direct
+path naturally traverses unrealizable parameter space on its way toward the
+unconstrained optimum. The penalty barrier does not cause the excursion;
+rather, the excursion is trajectory-mediated and penalty-modulated, with the
+barrier converting the excursion into an optimization setback.
+
+\paragraph{Asymptotic agreement baseline.}
+The composition defect $C_{AB} = \num{6.93e-6}$ is minute and non-monotone in
+$\lambda$, while the final parameter distance is
+$\|\theta_{2,A}^* - \theta_{2,B}^*\| = \num{3.16e-5}$. In this
+convex-quadratic setting with penalty regularization, both paths find the
+identical physical minimum. We report $C_{AB}$ not as an indicator of severe
+curvature, but as a computable traversal invariant that confirms asymptotic
+path consistency.
+
+% ============================================================================
+\section{Discussion and Outlook: The Paper~2 Horizon}\label{sec:discussion}
+% ============================================================================
+
+The findings of Paper~1 validate the foundational premise of the Stratified
+Design Atlas: exact canonical transport eliminates realization drift
+($\dR = 0$), while intermediate strata act as physical curricula that
+partially diagonalize ill-conditioned parameter landscapes.
+
+However, all transitions studied in Paper~1 are \emph{vertical, nested
+inclusions} ($\mathcal{M}_s \subset \mathcal{M}_{s'}$), where exact
+zero-padding transport is mathematically guaranteed. The full power of the
+geometric framework emerges when moving beyond nested hierarchies
+(Fig.~\ref{fig:horizon}).
+
+\begin{figure}[t]
+\centering
+\begin{tikzpicture}[
+    node distance=1.4cm and 3.2cm,
+    stratum/.style={
+      rectangle, rounded corners=3pt, draw=black!70,
+      fill=blue!8, minimum width=3.2cm, minimum height=0.7cm,
+      font=\footnotesize, align=center, thick
+    },
+    stratum2/.style={
+      rectangle, rounded corners=3pt, draw=black!70,
+      fill=orange!10, minimum width=3.2cm, minimum height=0.7cm,
+      font=\footnotesize, align=center, thick
+    },
+    edge_exact/.style={
+      -{Stealth[length=5pt]}, thick, blue!60!black
+    },
+    edge_learned/.style={
+      -{Stealth[length=5pt]}, thick, red!60!black, dashed
+    },
+    label_style/.style={
+      font=\scriptsize, midway
+    }
+  ]
+  % --- Paper 1: Vertical (left column) ---
+  \node[stratum] (S0L) {Stratum~0\\(Linear)};
+  \node[stratum, above=of S0L] (S1L) {Stratum~1\\(Pope Quadratic)};
+  \node[stratum, above=of S1L] (S2L) {Stratum~2\\(Pope Cubic)};
+
+  \draw[edge_exact] (S0L) -- (S1L)
+    node[label_style, right=2pt] {$e_1$\;(exact, $\dR\!=\!0$)};
+  \draw[edge_exact] (S1L) -- (S2L)
+    node[label_style, right=2pt] {$e_2$\;(exact, $\dR\!=\!0$)};
+
+  \node[above=0.3cm of S2L, font=\footnotesize\bfseries, blue!60!black]
+    {Paper~1: Vertical / Nested};
+
+  % --- Paper 2: Horizontal (right column) ---
+  \node[stratum2, right=3.8cm of S0L] (S0R) {Stratum~0\\($k$--$\omega$ SST)};
+  \node[stratum2, above=of S0R] (S1aR) {Stratum~1a\\(Craft Cubic)};
+  \node[stratum2, above=of S1aR] (S1bR) {Stratum~1b\\(Wallin--Johansson)};
+
+  \draw[edge_learned] (S0R) -- (S1aR)
+    node[label_style, right=2pt] {$\Gamma_H$\;(learned)};
+  \draw[edge_learned] (S1aR) -- (S1bR)
+    node[label_style, right=2pt] {$\Gamma_H$\;(learned)};
+
+  \node[above=0.3cm of S1bR, font=\footnotesize\bfseries, red!60!black]
+    {Paper~2: Horizontal / Non-Nested};
+\end{tikzpicture}
+\caption{Structural comparison of the two regimes of the Stratified Design
+  Atlas. Paper~1 studies vertical, nested inclusions where exact zero-padding
+  transport guarantees $\dR = 0$. Paper~2 targets horizontal, non-nested edits
+  (basis swaps, timescale mutations, model family transitions) where transport
+  maps $\Gamma_H$ must be learned via functional $L^2(\Omega)$ push-forward
+  matching.}\label{fig:horizon}
+\end{figure}
+
+\subsection{The Frontier: Horizontal Edits and Learned Connections}
+\label{sec:horizontal}
+
+In realistic autonomous turbulence discovery, an agent must execute
+\emph{horizontal structural edits}:
+\begin{enumerate}
+  \item \textit{Basis Swapping.} Exchanging Pope's $T^{(3)}$ for an
+    alternative quadratic tensor
+    $T^{(p)} = \Omega^2 - \tfrac{1}{3}\Tr(\Omega^2)\,I$, or switching to the
+    Wallin--Johansson effective algebraic Reynolds stress
+    formulation~\cite{Wallin2000}.
+  \item \textit{Turbulent Timescale Mutations.} Replacing the standard scale
+    $\tau_t = 1/(C_\mu\omega)$ with strain-dependent or non-local scales
+    $\tau_t = \min(1/\omega,\, \sqrt{k}/\epsilon)$.
+  \item \textit{Model Family Transitions.} Hopping between $k$--$\epsilon$,
+    $k$--$\omega$ SST, and Generalized Transfer Equation models.
+\end{enumerate}
+
+In these horizontal regimes, no subspace inclusion exists and zero-padding is
+undefined. To prevent catastrophic parameter de-calibration, the agent must
+compute a \emph{learned connection}
+$\Gamma_H\colon \Theta_A \to \Theta_B$ via functional $L^2(\Omega)$
+push-forward matching:
+\begin{equation}\label{eq:learned}
+  \Gamma_H(\theta_A) = \arg\min_{\theta_B \in \Theta_B}
+  \int_\Omega \|\tau_B(\bx;\theta_B)
+  - \tau_A(\bx;\theta_A)\|_F^2\, dA\,.
+\end{equation}
+In this horizontal setting, the composition defect $C_{AB}$ will cease to be
+negligible ($C_{AB} \gg 10^{-6}$), representing genuine path-dependence and
+geometric curvature in the space of turbulence closures.
+
+\subsection{Summary of Contributions}\label{sec:contributions}
+
+\begin{enumerate}
+  \item Formulated the \emph{Stratified Design Atlas} for turbulence modeling,
+    establishing exact conditions for zero-drift transport ($\dR = 0$).
+  \item Proved the \emph{Controllability Alignment} obstruction for
+    secondary-flow turbulence closures
+    ($\cos\phi_{\mathrm{sec}} = 0$ for linear Boussinesq vs.\ $1.0$ for
+    Pope).
+  \item Demonstrated that sequential transport acts as an \emph{analytical
+    physical curriculum}, isolating a $4.5\times$ Gram condition number
+    deterioration ($\kappa = 14.2 \to 64.1$) and eliminating manufactured
+    realizability excursions.
+  \item Audited and established full reproducibility across all telemetry,
+    condition numbers, and secondary forcing metrics.
+\end{enumerate}
+
+% ============================================================================
+\begin{acknowledgments}
+The authors thank the contributors to the OpenFOAM, NumPy, and SciPy projects,
+whose open-source software made this work possible.
+\end{acknowledgments}
+% ============================================================================
+
+\begin{thebibliography}{8}
+
+\bibitem{Boussinesq1877}
+  J.~Boussinesq,
+  \emph{Essai sur la th\'eorie des eaux courantes},
+  M\'emoires pr\'esent\'es par divers savants \`a l'Acad\'emie des Sciences
+  de l'Institut National de France \textbf{23}(1), 1--680 (1877).
+
+\bibitem{Craft1996}
+  T.~J.~Craft, B.~E.~Launder, and K.~Suga,
+  \emph{Development and application of a cubic eddy-viscosity model of
+    turbulence},
+  Int.\ J.\ Heat Fluid Flow \textbf{17}(2), 108--115 (1996).
+
+\bibitem{Lumley1978}
+  J.~L.~Lumley,
+  \emph{Computational modeling of turbulent flows},
+  Adv.\ Appl.\ Mech.\ \textbf{18}, 123--176 (1978).
+
+\bibitem{Pinelli2010}
+  A.~Pinelli, M.~Uhlmann, A.~Sekimoto, and G.~Kawahara,
+  \emph{Reynolds number dependence of mean flow and turbulence statistics in a
+    square duct},
+  J.\ Fluid Mech.\ \textbf{644}, 107--122 (2010).
+
+\bibitem{Pope1975}
+  S.~B.~Pope,
+  \emph{A more general effective-viscosity hypothesis},
+  J.\ Fluid Mech.\ \textbf{72}(2), 331--340 (1975).
+
+\bibitem{Prandtl1926}
+  L.~Prandtl,
+  \emph{\"Uber die ausgebildete Turbulenz},
+  Verh.\ 2.\ Int.\ Kongr.\ Tech.\ Mech., Z\"urich, 62--74 (1926).
+
+\bibitem{Schumann1977}
+  U.~Schumann,
+  \emph{Realizability of Reynolds stress turbulence models},
+  Phys.\ Fluids \textbf{20}(5), 721--725 (1977).
+
+\bibitem{Wallin2000}
+  S.~Wallin and A.~V.~Johansson,
+  \emph{An explicit algebraic Reynolds stress model for incompressible and
+    compressible turbulent flows},
+  J.\ Fluid Mech.\ \textbf{403}, 89--132 (2000).
+
+\end{thebibliography}
+
+\end{document}
