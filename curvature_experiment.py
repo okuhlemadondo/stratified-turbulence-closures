@@ -249,7 +249,7 @@ def run_experiment():
     norm_f_DNS = np.sqrt(np.sum(mesh.W_grid * f_DNS**2))
 
     # Path A: 100 steps in Stratum 1 + 120 steps in Stratum 2 = 220 steps
-    history_A = {"loss": [], "viol": [], "f_corr": []}
+    history_A = {"loss": [], "viol": [], "f_corr": [], "f_reversed": []}
     
     # Hop e1: 0 -> 1
     s1_A = Stratum1(mesh, lambda_realiz=lam)
@@ -264,6 +264,7 @@ def run_experiment():
         history_A["viol"].append(float(1.0 - check_realizability(mesh, s1_A.predict())))
         f_a1 = compute_f_sec(s1_A.predict())
         history_A["f_corr"].append(float(np.sum(mesh.W_grid * f_a1 * f_DNS) / (np.sqrt(np.sum(mesh.W_grid * f_a1**2)) * norm_f_DNS + 1e-12)))
+        history_A["f_reversed"].append(float(np.mean((f_a1 * f_DNS) < 0)))
         s1_A.theta = opt1_A.step(s1_A.theta, g1)
     theta_1_star = s1_A.theta.copy()
     
@@ -280,11 +281,12 @@ def run_experiment():
         history_A["viol"].append(float(1.0 - check_realizability(mesh, s2_A.predict())))
         f_a2 = compute_f_sec(s2_A.predict())
         history_A["f_corr"].append(float(np.sum(mesh.W_grid * f_a2 * f_DNS) / (np.sqrt(np.sum(mesh.W_grid * f_a2**2)) * norm_f_DNS + 1e-12)))
+        history_A["f_reversed"].append(float(np.mean((f_a2 * f_DNS) < 0)))
         s2_A.theta = opt2_A.step(s2_A.theta, g2)
     theta_2A_star = s2_A.theta.copy()
 
     # Path B: Direct Jump 0 -> 2 (220 steps directly in Stratum 2)
-    history_B = {"loss": [], "viol": [], "f_corr": []}
+    history_B = {"loss": [], "viol": [], "f_corr": [], "f_reversed": []}
     s2_B = Stratum2(mesh, lambda_realiz=lam)
     s2_B.theta = np.array([theta_0_star[0], 0.0, 0.0, 0.0])
     drift_direct = np.sqrt(np.sum(W * ((s2_B.predict() - s0.predict(theta_0_star))**2))) / norm_dns
@@ -297,6 +299,7 @@ def run_experiment():
         history_B["viol"].append(float(1.0 - check_realizability(mesh, s2_B.predict())))
         f_b = compute_f_sec(s2_B.predict())
         history_B["f_corr"].append(float(np.sum(mesh.W_grid * f_b * f_DNS) / (np.sqrt(np.sum(mesh.W_grid * f_b**2)) * norm_f_DNS + 1e-12)))
+        history_B["f_reversed"].append(float(np.mean((f_b * f_DNS) < 0)))
         s2_B.theta = opt2_B.step(s2_B.theta, g2)
     theta_2B_star = s2_B.theta.copy()
 
