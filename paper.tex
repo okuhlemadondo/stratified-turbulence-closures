@@ -44,35 +44,33 @@ Transient Realizability Dynamics in Nested Subspaces}
 
 % ============================================================================
 \begin{abstract}
-Data-driven turbulence closure modeling requires navigating a space of
-candidate model structures (discrete tensor basis selections) and continuous
-scalar coefficients. In a controlled \emph{a~priori} study of
-constant-coefficient Pope tensor-basis closures on a synthetic square duct
-benchmark ($\mathrm{Re}_\tau = 300$), we investigate whether staging
-calibration through intermediate subspaces---calibrating a quadratic
-truncation before extending to cubic---offers measurable advantages over
-direct joint calibration.
+In a convex, constant-coefficient, \emph{a~priori} calibration of a four-term
+Pope tensor basis on a synthetic square duct benchmark ($\mathrm{Re}_\tau = 300$),
+we investigate whether staging calibration through intermediate subspaces
+offers measurable advantages over direct joint calibration or a cold start.
+Because zero-padding preserves predictions identically ($\delta_R \equiv 0$),
+the deployed Stratum~2 model in the staged protocol inherits the full $5.64\%$
+realizability violation of the intermediate scaffold at deployment (peaking at
+$5.90\%$ during repair), whereas direct calibration produces a transient
+excursion peaking at $2.00\%$ violation (accompanied by a $1.68\times$ loss
+rebound), and an un-staged cold start ($\theta = \mathbf{0}$) reaches the
+identical minimizer with a peak violation of only $1.22\%$.
 
-We find that staging relocates transient realizability violations into a
-non-deployed scaffold stratum, yielding essentially monotone repair dynamics
-upon deployment into the full parameter space. Through a $2\times 2$ ablation
-matrix crossing basis scaling (raw vs.\ unit-normalized) with optimizer choice
-(Adam vs.\ plain gradient descent), we identify the mechanism driving direct
-calibration's transient instability: Adam's adaptive momentum interacting with
-the realizability penalty barrier, not Gram matrix ill-conditioning. Plain
-gradient descent produces zero realizability violations regardless of basis
-scaling.
+Through a comprehensive suite of optimizer controls (convergent plain gradient
+descent with $\alpha = 1/\lambda_{\max}$, Adam with $\beta_1 = 0$, and basis
+normalization with step-size rescaling), we find that transient realizability
+violations are governed by per-step travel distance in parameter space and
+adaptive coordinate scaling, rather than Gram matrix ill-conditioning. Plain
+gradient descent operating at a convergent step size also traverses
+unrealizable states (peaking at $6.25\%$ violation), while removing Adam's
+momentum reduces direct calibration's peak violation from $2.00\%$ to $1.30\%$.
 
-A cold-start baseline ($\theta = \mathbf{0}$) converges to the same final
-loss as both warm-started paths with lower peak violation
-($1.22\%$ vs.\ $2.00\%$ for direct warm-start), demonstrating that
-warm-starting's advantage in this convex setting is limited to trajectory
-quality under momentum-based optimizers, not to convergence speed or endpoint
-accuracy. We frame these findings within a \emph{Stratified Design Atlas}
-formalism that organizes model families as nested subspaces connected by
-zero-padding embeddings, and outline the theoretical horizon for non-nested
-structural edits where learned transport maps and non-convex losses make
-path-dependence genuinely geometric.
+In this convex setting, neither staged nor warm-started calibration confers an
+advantage in convergence speed, endpoint accuracy, or peak violation over a
+cold start. We formalize this configuration space as a \emph{Stratified Design
+Atlas} and outline the theoretical conditions---non-convex losses, coupled
+Navier--Stokes evaluation, and non-nested basis edits---under which geometric
+transport and path-dependence become non-trivial.
 \end{abstract}
 
 \maketitle
@@ -102,54 +100,66 @@ predominantly by Reynolds normal stress anisotropy
 $(\tau_{yy} - \tau_{zz})$ and cross-stream shear stress
 $\tau_{yz}$~\cite{Speziale1987}. Linear models produce secondary vorticity
 forcing that is anti-aligned with the physical forcing pattern, a classical
-result due to Speziale~\cite{Speziale1987}.
+result established by Speziale~\cite{Speziale1987}.
 
 To overcome these deficiencies, higher-order non-linear eddy viscosity models
-\cite{Pope1975,Craft1996,Wallin2000} have been developed. Modern automated
-model discovery frameworks face a practical challenge when navigating this
-space of candidate models:
+\cite{Pope1975,Craft1996,Wallin2000} expand the anisotropy tensor in a basis of
+symmetric, traceless tensors formed from strain and rotation rates. Modern
+automated model discovery frameworks face a practical question when searching
+this space of candidate models:
 \begin{itemize}
   \item \textit{Cold-start cost.} Re-optimizing all continuous parameters from
-    scratch each time a structural modification is made (adding, removing, or
-    swapping tensor basis terms) discards prior calibration work.
+    scratch ($\theta = \mathbf{0}$) each time a structural modification is made
+    (adding or swapping tensor basis terms) discards prior calibration work.
   \item \textit{Warm-starting risks.} Initializing new coefficients to zero
-    (or other heuristic values) preserves the prior calibration by
-    construction, but the subsequent optimization trajectory may interact
-    adversely with physical constraints such as
-    realizability~\cite{Schumann1977,Lumley1978}.
+    preserves prior predictions identically by construction, but the
+    subsequent optimization trajectory may venture into unrealizable parameter
+    regimes where the Reynolds stress tensor violates positive semi-definiteness
+    \cite{Schumann1977,Lumley1978}.
 \end{itemize}
 
 \subsection{Approach and Scope}\label{sec:scope}
 
-We formalize the space of nested tensor-basis closures as a collection of
-coordinate subspaces connected by zero-padding embeddings, which we term a
-\emph{Stratified Design Atlas}. In this simplest instantiation---nested
-constant-coefficient Pope subspaces with a convex quadratic task
-loss---zero-padding is exact by construction ($\dR \equiv 0$), endpoint
-agreement is guaranteed by convexity, and the geometric vocabulary (atlases,
-connections, curvature) names structure that is trivial. The framework's value
-lies in organizing the design space for future extensions to non-nested edits
-and non-convex losses (Sec.~\ref{sec:discussion}), where these structures
-become non-trivial.
+We formalize the configuration space of candidate closures as a
+\emph{Stratified Design Atlas}:
+\begin{equation}\label{eq:atlas}
+  \mathcal{A} = \bigl(B,\, \{\Theta_s\},\, \{R_s\},\, L,\, E,\, \{T_e\}\bigr)\,,
+\end{equation}
+where $B$ is the physical base domain, $\Theta_s$ are continuous parameter
+manifolds (strata) corresponding to specific algebraic or differential tensor
+structures, $R_s \subset \Theta_s$ are admissible physical subsets enforcing
+constraints such as realizability, $L$ is a task loss functional, $E$ is a
+set of structural transitions between model grammars, and
+$T_e: \Theta_s \to \Theta_{s'}$ are transport mappings carrying calibrated
+states across structural mutations.
 
-The contribution of this paper is a controlled \emph{a~priori} study of the
-\emph{transient dynamics} of warm-started calibration under realizability
-constraints:
+In the simplest instantiation studied here---nested constant-coefficient Pope
+subspaces with a convex quadratic task loss---the parameter spaces are
+$\Theta_s = \mathbb{R}^{d_s}$, the transport maps $T_e$ are zero-padding
+embeddings, realization drift vanishes identically ($\dR \equiv 0$ by
+construction), and the global minimizer is unique. The geometric vocabulary
+names structure that is algebraically trivial in this setting; its value lies
+in establishing a rigorous, fully characterized baseline against which future
+extensions to non-nested edits and non-convex losses (Sec.~\ref{sec:discussion})
+can be evaluated.
+
+The objective of this paper is a controlled \emph{a~priori} investigation of
+the \emph{transient optimization dynamics} of warm-started vs.\ cold-started
+calibrations under realizability constraints:
 \begin{enumerate}
   \item We quantify the stress-representability gap between linear and
-    quadratic Pope strata, recovering the classical
-    result~\cite{Speziale1987} that linear closures produce anti-aligned
-    secondary vorticity forcing.
-  \item We demonstrate that staging calibration through intermediate subspaces
-    relocates transient realizability violations into a non-deployed scaffold
-    model, yielding smoother deployment dynamics at the cost of a larger but
-    discarded scaffold violation.
-  \item Through a $2\times 2$ ablation matrix, we identify the transient
-    instability mechanism as Adam momentum interacting with the penalty
-    barrier, not Gram matrix ill-conditioning.
-  \item A cold-start baseline contextualizes the warm-starting advantage:
-    it converges to the same endpoint with lower peak violation, showing that
-    the staging benefit is specific to momentum-based optimizers.
+    quadratic Pope strata, recovering the classical result~\cite{Speziale1987}
+    that linear closures produce anti-aligned secondary vorticity forcing.
+  \item We analyze the dynamics of staged calibration ($\mathcal{M}_0 \to
+    \mathcal{M}_1 \to \mathcal{M}_2$), direct warm-starting ($\mathcal{M}_0 \to
+    \mathcal{M}_2$), and cold-starting ($\mathcal{M}_2$ from $\theta = \mathbf{0}$).
+    Because $\delta_R \equiv 0$, staging inherits the intermediate scaffold's
+    $5.64\%$ violation upon deployment, while cold-starting achieves the lowest
+    peak violation ($1.22\%$) throughout the descent.
+  \item Through a suite of optimizer controls (convergent plain GD, Adam with
+    $\beta_1 = 0$, and step-size rescalings), we isolate the mechanism of
+    transient excursions: travel distance per step and adaptive coordinate
+    scaling, rather than Gram matrix ill-conditioning.
 \end{enumerate}
 
 % ============================================================================
@@ -163,13 +173,22 @@ Consider steady, incompressible turbulent flow through a straight square duct
 of width $h$ aligned with the $x$-axis. The mean velocity field is
 $\bU = (U(y,z),\, V(y,z),\, W(y,z))$, which is $x$-independent but
 three-dimensional: $\partial U/\partial y$, $\partial U/\partial z \neq 0$,
-and the secondary velocities $(V,W)$ are nonzero. Defining the streamwise
-mean vorticity
-\begin{equation}
-  \omega_x = \frac{\partial W}{\partial y} - \frac{\partial V}{\partial z}\,,
+and secondary cross-plane velocities $(V,W)$ are nonzero.
+
+The streamwise mean vorticity is defined as
+\begin{equation}\label{eq:vorticity}
+  \omega_x = \frac{\partial W}{\partial y} - \frac{\partial V}{\partial z}\,.
 \end{equation}
-the secondary vorticity driving force $\fsec$ is defined by
-spatial derivatives of the Reynolds stresses:
+In fully developed square duct flow, the transport equation for $\omega_x$
+reduces to
+\begin{equation}\label{eq:vorticity_transport}
+  U\frac{\partial \omega_x}{\partial x}
+  + V\frac{\partial \omega_x}{\partial y}
+  + W\frac{\partial \omega_x}{\partial z}
+  = \nu \nabla_{yz}^2 \omega_x + \fsec(\bx)\,,
+\end{equation}
+where the secondary vorticity driving force $\fsec$ is governed by spatial
+derivatives of the Reynolds stress tensor:
 \begin{equation}\label{eq:fsec}
   \fsec(\bx) =
   \underbrace{\frac{\partial^2}{\partial y\,\partial z}
@@ -178,23 +197,31 @@ spatial derivatives of the Reynolds stresses:
   \underbrace{\left(\frac{\partial^2}{\partial z^2}
     - \frac{\partial^2}{\partial y^2}\right)\tau_{yz}}_{\text{Cross-plane shear stress}}\,.
 \end{equation}
+Equation~(\ref{eq:vorticity_transport}) establishes $\fsec$ as the direct
+source term generating streamwise secondary vortices.
 
 \subsection{Tensor Integrity Basis and Nested Subspaces}
 \label{sec:basis}
 
+The symmetric mean strain rate tensor $S$ and anti-symmetric mean rotation rate
+tensor $\Omega$ are defined by
+\begin{equation}
+  S_{ij} = \tfrac{1}{2}(\partial_j U_i + \partial_i U_j), \quad
+  \Omega_{ij} = \tfrac{1}{2}(\partial_j U_i - \partial_i U_j)\,.
+\end{equation}
+Their dimensionless counterparts scale with the turbulent timescale
+$\tau_t = 1/(C_\mu \omega)$.
+
 Following Pope~\cite{Pope1975}, the deviatoric Reynolds stress anisotropy
 $a_{ij} = \tau_{ij}/k - \tfrac{2}{3}\delta_{ij}$ can be expanded in a
-complete integrity basis of the non-dimensional symmetric strain rate
-$S_{ij}^*$ and anti-symmetric rotation rate $\Omega_{ij}^*$:
+complete integrity basis:
 \begin{equation}\label{eq:pope_expansion}
-  a_{ij} = \sum_{n=1}^{N} c_n(\bI)\, T_{ij}^{(n)}\,.
+  a_{ij} = \sum_{n=1}^{N} c_n\, T_{ij}^{(n)}\,,
 \end{equation}
-In the square duct, the mean velocity field is $x$-independent but has
-three-dimensional strain via $\partial U/\partial y$ and
-$\partial U/\partial z$. We \emph{select} (not truncate) four tensors from
-Pope's ten-term basis to form three nested subspaces. The strata defined here
-use \emph{spatially constant} coefficients $\theta$, corresponding to
-constant-coefficient truncations of Pope's general expansion.
+where we identify $c_n \equiv \theta_{n-1}$. In the square duct, the flow has
+three-dimensional strain via $\partial U/\partial y$ and $\partial U/\partial z$.
+We select four tensors from Pope's ten-term integrity basis to form three
+nested subspaces with spatially constant coefficients $\theta \in \mathbb{R}^d$:
 
 \paragraph{Stratum~0 ($\mathcal{M}_0$, Linear Boussinesq, $d_0 = 1$).}
 \begin{equation}\label{eq:stratum0}
@@ -204,14 +231,14 @@ constant-coefficient truncations of Pope's general expansion.
 \end{equation}
 where $\theta_0 = C_\mu \approx 0.09$.
 
-\paragraph{Stratum~1 ($\mathcal{M}_1$, Quadratic, $d_1 = 3$).}
+\paragraph{Stratum~1 ($\mathcal{M}_1$, Quadratic Pope, $d_1 = 3$).}
 \begin{equation}\label{eq:stratum1}
   \tau^{(1)}(\bx;\theta) = \tfrac{2}{3}k\,I
   + \theta_0\, T^{(1)}
   + \theta_1\, T^{(2)}
   + \theta_2\, T^{(3)}\,,
 \end{equation}
-with
+with quadratic invariant tensors
 \begin{equation}\label{eq:T2T3}
   T^{(2)} = \frac{k}{(C_\mu\omega)^2}
     \Bigl(S^2 - \tfrac{1}{3}\Tr(S^2)\,I\Bigr),
@@ -220,12 +247,12 @@ with
     \bigl(S\Omega - \Omega S\bigr).
 \end{equation}
 
-\paragraph{Stratum~2 ($\mathcal{M}_2$, Cubic, $d_2 = 4$).}
+\paragraph{Stratum~2 ($\mathcal{M}_2$, Cubic Pope, $d_2 = 4$).}
 \begin{equation}\label{eq:stratum2}
   \tau^{(2)}(\bx;\theta) = \tfrac{2}{3}k\,I
   + \sum_{i=0}^{3} \theta_i\, T^{(i+1)}\,,
 \end{equation}
-where $T^{(4)}$ is a cubic invariant tensor:
+incorporating the cubic tensor
 \begin{equation}\label{eq:T4}
   T^{(4)} = \frac{k}{(C_\mu\omega)^3}
     \bigl(S^2\Omega - \Omega S^2\bigr).
@@ -234,8 +261,8 @@ where $T^{(4)}$ is a cubic invariant tensor:
 \subsection{Stress-Representability Metrics}
 \label{sec:representability}
 
-To quantify whether a subspace can represent the secondary flow driving
-stress, we define two distinct metrics.
+To quantify whether a subspace can represent secondary flow driving stresses,
+we define two distinct metrics.
 
 The \emph{stress-projection alignment} $\cos\phi_{\mathrm{sec}}$ measures
 whether the secondary stress pattern $\tau_{\mathrm{sec}}$ (the
@@ -251,8 +278,8 @@ $L^2(\Omega)$ span of the basis tensors:
 \end{equation}
 
 The \emph{forcing correlation} $\rho$ measures the alignment of the secondary
-vorticity forcing field (Eq.~\ref{eq:fsec}) produced by a specific model
-$\tau(\theta)$ with the reference forcing:
+vorticity forcing field $\fsec(\tau(\theta))$ produced by a specific model with
+the reference forcing field $\fsec(\tref)$:
 \begin{equation}\label{eq:rho}
   \rho(\theta) =
   \frac{\langle \fsec(\tau(\theta)),\;
@@ -260,55 +287,63 @@ $\tau(\theta)$ with the reference forcing:
        {\|\fsec(\tau(\theta))\|_{L^2}\;
         \|\fsec(\tref)\|_{L^2}}\,.
 \end{equation}
-These metrics measure different things: $\cos\phi_{\mathrm{sec}}$ is an
-existence statement about the basis span (independent of $\theta$), while
-$\rho$ evaluates the vorticity forcing at a specific $\theta$ and involves
-second spatial derivatives.
+These metrics measure fundamentally different quantities: $\cos\phi_{\mathrm{sec}}$
+is a property of the subspace span (independent of $\theta$), while $\rho(\theta)$
+evaluates the field-level vorticity forcing at a specific parameter state $\theta$
+and involves second spatial derivatives.
 
 \subsection{Zero-Padding Embeddings and Loss Landscape}
 \label{sec:embedding}
 
-For the nested inclusions $\mathcal{M}_0 \subset \mathcal{M}_1 \subset
-\mathcal{M}_2$, zero-padding defines the embedding:
+For nested inclusions $\mathcal{M}_s \subset \mathcal{M}_{s'}$, the canonical
+transport map is zero-padding:
 \begin{equation}\label{eq:transport}
   T_e(\theta) = \bigl[\theta_0,\, \theta_1,\, \dotsc,\,
     \theta_{d_s-1},\,
     \underbrace{0,\, \dotsc,\, 0}_{d_{s'}-d_s}\bigr].
 \end{equation}
-For any model family linear in $\theta$, zero-padding preserves predictions
-identically:
-$\tau^{(s')}(T_e(\theta)) = \tau^{(s)}(\theta)$ pointwise, so the realization
-drift $\dR \equiv 0$ by construction. We verify this numerically.
+Because the model is linear in $\theta$, zero-padding preserves predictions
+identically: $\tau^{(s')}(T_e(\theta)) \equiv \tau^{(s)}(\theta)$ pointwise.
+The realization drift vanishes identically by construction:
+\begin{equation}\label{eq:drift}
+  \dR = \frac{\|\tau^{(s')}(T_e(\theta)) - \tau^{(s)}(\theta)\|_{L^2}}
+             {\|\tref\|_{L^2}} \equiv 0\,.
+\end{equation}
 
-Because $\tau$ is affine in $\theta$, the task loss
-$L_{\text{task}}(\theta) = \tfrac{1}{2}\int_\Omega
-\|\tau(\theta) - \tref\|_F^2\,dA$ is quadratic with constant Hessian equal to
-the spatial \emph{Gram matrix}:
+The task loss is the integrated Frobenius discrepancy:
+\begin{equation}\label{eq:task_loss}
+  L_{\text{task}}(\theta) = \frac{1}{2}\int_\Omega
+  \|\tau(\bx;\theta) - \tref(\bx)\|_F^2\,dA\,,
+\end{equation}
+which is quadratic with constant Hessian equal to the spatial Gram matrix:
 \begin{equation}\label{eq:gram}
   G_{ij} = \int_\Omega \Tr\bigl(T^{(i)}(\bx)\, T^{(j)}(\bx)\bigr)\,dA\,.
 \end{equation}
 
-To enforce physical validity, a realizability penalty is added:
+To penalize non-physical states, a realizability penalty is added:
 \begin{equation}\label{eq:penalty}
   L(\theta) = L_{\text{task}}(\theta)
   + \lambda_{\mathrm{realiz}}
     \int_\Omega \max\!\bigl(0,\, -\lambda_{\min}(\tau(\bx;\theta))\bigr)^2\,dA\,,
 \end{equation}
-where $\lambda_{\min}$ denotes the smallest eigenvalue of the local stress
-tensor. Since $\tau$ is affine in $\theta$ and the penalty is convex
-(composition of convex nondecreasing $\max(0,\cdot)^2$ with concave
-$-\lambda_{\min}$), the full loss $L(\theta)$ is convex when $G \succ 0$.
-Both traversal paths are therefore guaranteed to converge to the same
-minimizer; endpoint differences measure only convergence accuracy.
+where $\lambda_{\min}$ is the smallest eigenvalue of the local stress tensor.
+Because $\lambda_{\min}$ is a concave function of symmetric matrices,
+$-\lambda_{\min}$ is convex. Its composition with the convex non-decreasing
+function $\max(0,\cdot)^2$ is convex. Since $L_{\text{task}}$ is quadratic
+convex, the full loss $L(\theta)$ is strictly convex when $G \succ 0$.
+Consequently, all paths share a unique global minimizer; observed differences at
+convergence reflect numerical optimization tolerances rather than separate
+local basins.
 
-We define the \emph{convergence diagnostic}:
+We define the convergence diagnostic:
 \begin{equation}\label{eq:CAB}
   C_{AB}
   = \frac{\|\tau^{(2)}(\theta_{2,A}^*) -
           \tau^{(2)}(\theta_{2,B}^*)\|_{L^2(\Omega)}}
          {\|\tref\|_{L^2(\Omega)}}\,,
 \end{equation}
-which measures how closely two paths have converged to the common minimizer.
+which measures how closely two optimization trajectories have approached the
+shared minimizer.
 
 % ============================================================================
 \section{Experimental Setup}\label{sec:setup}
@@ -316,53 +351,50 @@ which measures how closely two paths have converged to the common minimizer.
 
 \subsection{Synthetic Benchmark}\label{sec:benchmark}
 
-We discretized a square duct quadrant
-$(y,z) \in [0,h] \times [0,h]$ on a $48 \times 48$ non-uniform grid clustered
-near the walls using hyperbolic tangent stretching ($y_1^+ \approx 0.8$).
-Mean flow fields (streamwise velocity $U(y,z)$ and secondary velocities
-$V(y,z)$, $W(y,z)$ from a corner-vortex streamfunction) were synthesized to
-reproduce the qualitative features of DNS profiles at
-$\mathrm{Re}_\tau = 300$~\cite{Pinelli2010}.
+We discretized a square duct quadrant $(y,z) \in [0,h] \times [0,h]$ on a
+$48 \times 48$ non-uniform grid clustered near the walls using hyperbolic
+tangent stretching ($y_1^+ \approx 0.8$). Mean flow fields ($U, V, W, k, \omega$)
+were synthesized from analytical profiles reproducing the qualitative secondary
+vortex structure of DNS data at $\mathrm{Re}_\tau = 300$~\cite{Pinelli2010}.
+The Reynolds number is a label characterizing the target flow regime and does
+not enter the algebraic field synthesis.
 
-The reference stress field $\tref$ is generated \emph{synthetically}:
+The reference stress field $\tref$ is constructed synthetically:
 \begin{equation}\label{eq:tref}
   \tref = \tfrac{2}{3}k\,I + \sum_{n=1}^{4} c_n^{\mathrm{true}}\, T^{(n)}
   + \tau_{\mathrm{wall}}\,,
 \end{equation}
-with known coefficients
-$[c_1, c_2, c_3, c_4]^{\mathrm{true}} =
-[0.090,\; 0.045,\; {-}0.035,\; 0.060]$
-and an unmodeled wall perturbation
+with true coefficients $[c_1, c_2, c_3, c_4]^{\mathrm{true}} =
+[0.090,\, 0.045,\, {-}0.035,\, 0.060]$ and an unmodeled wall stress perturbation
 $\tau_{\mathrm{wall}} = 0.015\,(k/\omega^2)\sin(\pi y)\sin(\pi z)\,S^2$.
-The perturbation ensures no stratum achieves zero loss (controlled
-misspecification).
 
-Because $\tref$ is constructed from the same basis tensors, the
-stress-projection alignment $\cos\phi_{\mathrm{sec}}(\mathcal{M}_1) = 1.0$
-follows by construction. This is a deliberate design choice: the study
-investigates optimizer dynamics and realizability transients, not model
-adequacy against real turbulence data.
+Due to this unmodeled perturbation, $\tref$ itself carries a slight realizability
+violation of $1.56\%$ ($\min\lambda(\tref) = \num{-5.10e-5}$, corresponding to
+$\num{-1.17e-3}\max(k)$). The perturbation ensures controlled misspecification:
+no stratum can achieve zero loss. Because $\tref$ is constructed from the Pope
+basis, $\cos\phi_{\mathrm{sec}}(\mathcal{M}_1) = 1.0$ follows by construction;
+this study isolates numerical optimization dynamics rather than modeling
+fidelity against physical DNS measurements.
 
 \subsection{Traversal Protocols}\label{sec:protocols}
 
-Three protocols are compared under a budget of $N = 220$ gradient steps,
-using Adam ($\alpha = \num{2e-3}$, $\beta_1 = 0.9$, $\beta_2 = 0.999$)
-with realizability penalty $\lambda_{\mathrm{realiz}} = 150$:
+We evaluate three calibration protocols under a budget of $N = 220$ gradient
+steps with baseline penalty $\lambda_{\mathrm{realiz}} = 150$:
 \begin{itemize}
-  \item \textit{Path~A (Staged):} 100 steps in Stratum~1, then zero-pad
-    $\theta_3 = 0$ and create a fresh Adam optimizer ($m = v = 0$), then
-    120~steps in Stratum~2 with all four coefficients free.
-  \item \textit{Path~B (Direct):} 220 steps in Stratum~2, initialized from
-    $T_e(\theta_0^*) = [0.089849,\, 0,\, 0,\, 0]$.
+  \item \textit{Path~A (Staged warm-start):} 100 steps in Stratum~1
+    ($\mathcal{M}_1$, $d=3$), followed by zero-padding $\theta_3 = 0$
+    ($\delta_R \equiv 0$) and a fresh Adam optimizer ($m = v = 0$), then
+    120 steps in Stratum~2 ($\mathcal{M}_2$, $d=4$) with all parameters free.
+  \item \textit{Path~B (Direct warm-start):} 220 steps in Stratum~2,
+    initialized from $T_e(\theta_0^*) = [0.089849,\, 0,\, 0,\, 0]$.
   \item \textit{Path~C (Cold start):} 220 steps in Stratum~2 from
     $\theta = [0,\, 0,\, 0,\, 0]$.
 \end{itemize}
 
-\emph{Terminology.} We term Path~A's Stratum~1 phase the \emph{scaffold}
-(its iterates are discarded upon transition to Stratum~2) and the
-subsequent Stratum~2 phase \emph{deployed} (these iterates constitute the
-usable model). \emph{Violation fraction} is the proportion of grid cells where
-$\lambda_{\min}(\tau(\bx;\theta)) < -10^{-6}$.
+\emph{Terminology.} We designate Path~A's Stratum~1 iterates as the
+\emph{scaffold} (which is discarded upon transition) and its Stratum~2 iterates
+as \emph{deployed}. The \emph{violation fraction} is the percentage of grid
+cells where $\lambda_{\min}(\tau) < -10^{-6}$.
 
 % ============================================================================
 \section{Results}\label{sec:results}
@@ -372,440 +404,351 @@ $\lambda_{\min}(\tau(\bx;\theta)) < -10^{-6}$.
 \label{sec:representability_results}
 
 \begin{table}[t]
-\caption{Stress-representability and forcing alignment for the linear
-  Boussinesq stratum. $\cos\phi_{\mathrm{sec}}$ measures the projection of
-  the secondary stress pattern onto the basis span (Eq.~\ref{eq:controllability}).
-  $\rho(\theta_0^*)$ measures the forcing-field correlation at the calibrated
-  parameters (Eq.~\ref{eq:rho}). These are different
-  metrics; their near-zero values reflect different aspects of Boussinesq
-  failure. Because secondary velocities $V, W \neq 0$ in the evaluation
-  field, $\cos\phi_{\mathrm{sec}}$ is small but not exactly zero.}
-\label{tab:representability}
+\caption{Stress-representability and forcing alignment for Stratum~0 (Linear)
+  and Stratum~1 (Quadratic). $\cos\phi_{\mathrm{sec}}$ measures secondary stress
+  representation in the basis span (Eq.~\ref{eq:controllability});
+  $\rho(\theta^*)$ measures field-level forcing correlation (Eq.~\ref{eq:rho}).
+  Because synthesized secondary velocities $V, W \neq 0$ produce nonzero
+  $S_{yy} - S_{zz}$, $\cos\phi_{\mathrm{sec}}(\mathcal{M}_0)$ is small but
+  not exactly zero.}\label{tab:representability}
 \begin{ruledtabular}
 \begin{tabular}{lcc}
-  Metric & Stratum~0 & Stratum~1 \\
+  Metric & Stratum~0 (Linear) & Stratum~1 (Quadratic) \\
   \midrule
   $\cos\phi_{\mathrm{sec}}$ (stress projection)
     & $\num{1.15e-4} \approx 0$ & $1.000$ \\[3pt]
   $\rho(\theta^*)$ (forcing correlation)
-    & $-0.157$ & --- \\[3pt]
+    & $-0.157$ & $+0.294$ \\[3pt]
   Reversed forcing fraction
-    & $29.38\%$ & --- \\
+    & $29.38\%$ & $20.36\%$ \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
 
-Table~\ref{tab:representability} reports both metrics for Stratum~0.
-The stress-projection alignment
-$\cos\phi_{\mathrm{sec}}(\mathcal{M}_0) = \num{1.15e-4} \approx 0$
-confirms that the linear basis nearly cannot represent the secondary
-stress pattern. The value is not exactly zero because the synthesized
-secondary velocities $(V,W \neq 0)$ produce nonzero $S_{yy} - S_{zz}$
-in the evaluation field.
+Table~\ref{tab:representability} summarizes representability metrics for the
+linear and quadratic strata. The stress projection alignment
+$\cos\phi_{\mathrm{sec}}(\mathcal{M}_0) = \num{1.15e-4} \approx 0$ confirms
+that the linear Boussinesq basis is nearly incapable of generating the required
+stress anisotropy pattern. The value is not identically zero because the
+evaluation field contains nonzero secondary velocities ($V,W \neq 0$), yielding
+weak strain anisotropy $S_{yy} - S_{zz} \neq 0$.
 
-The forcing correlation at the calibrated Boussinesq model is
-$\rho(\theta_0^*) = -0.157$, with $29.38\%$ of the quadrant carrying
-reversed secondary forcing. The linear model does not merely omit secondary
-motion---it produces anti-aligned vorticity forcing in the near-wall corner
-regions, recovering the classical result of
-Speziale~\cite{Speziale1987}. Because both warm-started paths
-(A and B) share this origin, reversed circulation is an intrinsic
-property of the Boussinesq base, establishing the baseline challenge
-that calibration must resolve.
+At the calibrated parameter $\theta_0^* = 0.089849$, the linear model yields a
+negative forcing correlation $\rho = -0.157$, with $29.38\%$ of the quadrant
+exhibiting reversed secondary vorticity forcing. This reproduces Speziale's
+classical result~\cite{Speziale1987}: linear eddy-viscosity models drive
+secondary flow in the direction opposite to physical corner vortices.
 
-\subsection{Gram Matrix Structure}\label{sec:gram_results}
+\subsection{Gram Matrix Structure and Conditioning Decomposition}
+\label{sec:gram_results}
 
 \begin{table}[t]
-\caption{Full Gram matrix $G$ (Eq.~\ref{eq:gram}) and its normalized
-  correlation matrix $R_{ij} = G_{ij}/\sqrt{G_{ii}G_{jj}}$.
-  The block-diagonal structure is exact: $G_{ij} < 10^{-17}$ for
-  $i \in \{1,2\}$, $j \in \{3,4\}$. This is an algebraic identity
-  ($\Tr(A[B,\Omega]) = 0$ for symmetric polynomials $A,B$ in $S$),
-  not a duct-specific symmetry.}\label{tab:gram}
+\caption{Full spatial Gram matrix $G_{ij}$ (Eq.~\ref{eq:gram}) and its
+  normalized correlation matrix $R_{ij} = G_{ij}/\sqrt{G_{ii}G_{jj}}$.
+  The block-diagonal structure ($G_{ij} < 10^{-17}$ for $i \in \{1,2\}$,
+  $j \in \{3,4\}$) is an algebraic identity: because $A$ and $B$ are polynomials
+  in $S$, they commute ($[A,B] = 0$), so $\Tr(A[B,\Omega]) = \Tr([A,B]\Omega) = 0$.}\label{tab:gram}
 \begin{ruledtabular}
 \begin{tabular}{lcccc}
   & $T^{(1)}$ & $T^{(2)}$ & $T^{(3)}$ & $T^{(4)}$ \\
   \midrule
   $G_{ij}$ \\[2pt]
-  $T^{(1)}$ & $\num{1.37e-4}$ & $\num{6.7e-9}$ & $\approx 0$ & $\approx 0$ \\
-  $T^{(2)}$ & $\num{6.7e-9}$ & $\num{9.59e-6}$ & $\approx 0$ & $\approx 0$ \\
-  $T^{(3)}$ & $\approx 0$ & $\approx 0$ & $\num{1.15e-4}$ & $\num{-1.61e-5}$ \\
-  $T^{(4)}$ & $\approx 0$ & $\approx 0$ & $\num{-1.61e-5}$ & $\num{4.43e-6}$ \\
+  $T^{(1)}$ & $\num{1.365e-4}$ & $\num{6.69e-9}$ & $\approx 0$ & $\approx 0$ \\
+  $T^{(2)}$ & $\num{6.69e-9}$ & $\num{9.589e-6}$ & $\approx 0$ & $\approx 0$ \\
+  $T^{(3)}$ & $\approx 0$ & $\approx 0$ & $\num{1.151e-4}$ & $\num{-1.612e-5}$ \\
+  $T^{(4)}$ & $\approx 0$ & $\approx 0$ & $\num{-1.612e-5}$ & $\num{4.431e-6}$ \\
   \midrule
   $R_{ij}$ \\[2pt]
-  $T^{(3)}$ & & & $1.000$ & $-0.714$ \\
-  $T^{(4)}$ & & & $-0.714$ & $1.000$ \\
+  $T^{(1)}$ & $1.000$ & $\num{1.85e-4}$ & $0.000$ & $0.000$ \\
+  $T^{(2)}$ & $\num{1.85e-4}$ & $1.000$ & $0.000$ & $0.000$ \\
+  $T^{(3)}$ & $0.000$ & $0.000$ & $1.000$ & $-0.714$ \\
+  $T^{(4)}$ & $0.000$ & $0.000$ & $-0.714$ & $1.000$ \\
   \midrule
   \multicolumn{5}{l}{$L^2$ norms:
-    $\|T^{(1)}\| = \num{1.17e-2}$,
-    $\|T^{(2)}\| = \num{3.10e-3}$,
-    $\|T^{(3)}\| = \num{1.07e-2}$,
-    $\|T^{(4)}\| = \num{2.10e-3}$} \\
+    $\|T^{(1)}\| = \num{1.169e-2}$,
+    $\|T^{(2)}\| = \num{3.097e-3}$,
+    $\|T^{(3)}\| = \num{1.073e-2}$,
+    $\|T^{(4)}\| = \num{2.105e-3}$} \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
 
 \begin{table}[t]
-\caption{Condition numbers of the Gram matrix across strata. The
-  block-diagonal structure decomposes the problem into a
-  $(\theta_0,\theta_1)$ block with $\kappa = 14.2$ and a
-  $(\theta_2,\theta_3)$ block with $\kappa = 55.1$. After
-  unit-normalizing each basis tensor to $\|T^{(n)}\|_{L^2} = 1$, the global
-  condition number drops from $64.1$ to $6.0$, indicating that the raw
-  conditioning is dominated by the scale disparity between
-  $\|T^{(4)}\|$ and $\|T^{(1)}\|$, not by the
-  $\langle T^{(3)}, T^{(4)} \rangle$ coupling.}\label{tab:kappa}
+\caption{Condition numbers of the Gram matrix across strata. The system
+  decouples into independent $(\theta_0,\theta_1)$ and $(\theta_2,\theta_3)$
+  blocks. After unit-normalizing each basis tensor, the condition number of the
+  second block is $\kappa = 5.99$. The raw condition number $\kappa = 64.10$
+  decomposes as $(G_{11}/G_{44}) \times 2.08 \approx 30.8 \times 2.08$.}\label{tab:kappa}
 \begin{ruledtabular}
-\begin{tabular}{lS[table-format=2.2]S[table-format=2.1]}
-  & {$\kappa$ (raw)} & {$\kappa$ (unit-norm)} \\
+\begin{tabular}{lcc}
+  Subspace & $\kappa$ (raw basis) & $\kappa$ (unit-normalized) \\
   \midrule
-  Stratum~0 ($d=1$)
-    & 1.00 & 1.0 \\
-  Stratum~1 ($d=3$), $(\theta_0,\theta_1)$ block
-    & 14.24 & 1.0 \\
-  Stratum~2 ($d=4$), $(\theta_2,\theta_3)$ block
-    & 55.10 & {---} \\
-  Stratum~2 ($d=4$), global
-    & 64.10 & 5.99 \\
+  Stratum~0 ($d=1$) & 1.00 & 1.00 \\
+  Stratum~1 ($d=3$), $(\theta_0,\theta_1)$ block & 14.24 & 1.00 \\
+  Stratum~2 ($d=4$), $(\theta_2,\theta_3)$ block & 55.10 & 5.99 \\
+  Stratum~2 ($d=4$), global & 64.10 & 5.99 \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
 
-Tables~\ref{tab:gram} and~\ref{tab:kappa} report the full Gram matrix and its
-conditioning. Three observations:
-\begin{enumerate}
-  \item The block-diagonal structure ($G_{ij} < 10^{-17}$ for
-    $i \in \{1,2\}$, $j \in \{3,4\}$) is an algebraic identity, not a
-    duct-specific symmetry: for symmetric polynomials $A, B$ in $S$,
-    $\Tr(A[B,\Omega]) = 0$.
-  \item Within the $(\theta_2, \theta_3)$ block, the normalized correlation
-    $R_{34} = -0.714$ is substantial, driving the block condition number to
-    $\kappa = 55.1$.
-  \item After unit-normalizing each basis tensor, the global condition number
-    drops from $64.1$ to $6.0$. The raw $\kappa = 64.1$ is dominated by the
-    scale disparity $\|T^{(1)}\|/\|T^{(4)}\| \approx 5.6$, not by the
-    cross-coupling.
-\end{enumerate}
+Tables~\ref{tab:gram} and~\ref{tab:kappa} present the full Gram matrix and its
+condition numbers. The block-diagonal decoupling ($G_{13} = G_{14} = G_{23} =
+G_{24} = 0$) holds to machine precision ($< 10^{-17}$). This is an exact
+algebraic property: for any two symmetric matrix polynomials $A(S)$ and $B(S)$,
+$A$ and $B$ commute, so $[A,B] = 0$ and
+$\Tr(A[B,\Omega]) = \Tr([A,B]\Omega) = 0$.
+
+Decomposing the global condition number $\kappa(G_2) = 64.10$:
+\begin{itemize}
+  \item The ratio of diagonal entries is
+    $G_{11}/G_{44} = (\|T^{(1)}\|/\|T^{(4)}\|)^2 \approx 30.82$.
+  \item Unit-normalizing each basis tensor ($\|T^{(n)}\|_{L^2} = 1$) collapses
+    the condition number to $\kappa(\tilde{G}_2) = 5.99$.
+  \item The residual conditioning $\kappa = 5.99$ after normalization is
+    governed entirely by the cross-coupling $R_{34} = -0.714$ in the
+    $(\theta_2,\theta_3)$ block: $(1 + |R_{34}|)/(1 - |R_{34}|) = 1.714/0.286 \approx 5.99$.
+  \item Together, $\kappa(G_2) \approx 30.82 \times 2.08 = 64.10$. Scale disparity
+    accounts for a factor of $\approx 31$, and basis cross-coupling accounts for
+    the remaining factor of $\approx 2.08$.
+\end{itemize}
 
 \subsection{Traversal Dynamics}\label{sec:dynamics}
 
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{curvature_results.png}
+\caption{Comprehensive comparison of calibration dynamics.
+  (a)~Calibration loss trajectories for Path~A (staged), Path~B (direct),
+  and Path~C (cold start). Path~B exhibits a $1.68\times$ loss rebound between
+  steps 21 and 28.
+  (b)~Realizability violation fractions. Path~A's deployed Stratum~2 model
+  inherits the scaffold's $5.64\%$ violation at the hop ($\delta_R \equiv 0$)
+  and repairs monotonically. Cold start maintains the lowest violation ($1.22\%$).
+  (c)~Optimizer and scaling ablation: peak violation is driven by step size and
+  coordinate scaling; convergent plain GD violates at $6.25\%$, while $\beta_1 = 0$
+  reduces Adam's peak to $1.30\%$.
+  (d)~Gram conditioning across strata: raw basis vs.\ unit-normalized basis,
+  showing the scale-versus-coupling decomposition.}\label{fig:results}
+\end{figure*}
+
 \begin{table*}[t]
-\caption{Audited traversal telemetry for the three protocols.
-  All values from the committed database.
-  Forcing $\rho$ defined by Eq.~(\ref{eq:rho}).
-  Violation fraction: proportion of grid cells where
-  $\lambda_{\min}(\tau) < -10^{-6}$.}\label{tab:telemetry}
+\caption{Audited traversal telemetry across protocols ($N = 220$, $\lambda = 150$).
+  All values from committed experimental databases.
+  Violation fraction: grid percentage with $\lambda_{\min}(\tau) < -10^{-6}$.}\label{tab:telemetry}
 \begin{ruledtabular}
 \begin{tabular}{llccccc}
-  & Stage
-  & Step
-  & Loss $L(\theta)$
-  & Violation
-  & Forcing $\rho$
-  & Reversed frac. \\
+  Protocol & Stage & Step & Loss $L(\theta)$ & Violation & Forcing $\rho$ & Reversed frac. \\
   \midrule
-  & Shared warm-start origin
-    & 0
-    & $\num{1.2264e-7}$
-    & $0.00\%$
-    & $-0.157$
-    & $29.38\%$ \\
+  Shared & Warm-start origin & 0 & $\num{1.2264e-7}$ & $0.00\%$ & $-0.157$ & $29.38\%$ \\
   \midrule
-  \multirow{7}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~A}}
-  & Scaffold (Stratum~1)
-    & 50
-    & $\num{5.03e-9}$
-    & $5.12\%$
-    & $+0.293$
-    & $20.6\%$ \\
-  & Scaffold end
-    & 99
-    & $\num{4.73e-9}$
-    & $5.64\%$
-    & $+0.294$
-    & $20.4\%$ \\
-  & Hop $e_2$ ($\dR \equiv 0$; fresh Adam)
-    & 100
-    & $\num{4.73e-9}$
-    & $5.64\%$
-    & $+0.294$
-    & $20.4\%$ \\
-  & Deployed repair
-    & 105
-    & $\num{3.35e-9}$
-    & $3.12\%$
-    & $+0.654$
-    & $8.12\%$ \\
-  & Deployed repair
-    & 120
-    & $\num{1.49e-9}$
-    & $1.22\%$
-    & $+0.988$
-    & $2.30\%$ \\
-  & Deployed repair
-    & 150
-    & $\num{1.36e-9}$
-    & $0.95\%$
-    & $+0.999$
-    & $1.56\%$ \\
-  & Final
-    & 219
-    & $\num{1.34e-9}$
-    & $1.04\%$
-    & $+0.999$
-    & $1.65\%$ \\
+  \multirow{7}{*}{Path~A (Staged)}
+    & Scaffold & 50 & $\num{5.03e-9}$ & $5.12\%$ & $+0.293$ & $20.57\%$ \\
+    & Scaffold end & 99 & $\num{4.73e-9}$ & $5.64\%$ & $+0.294$ & $20.36\%$ \\
+    & Hop $e_2$ ($\dR \equiv 0$, fresh Adam) & 100 & $\num{4.73e-9}$ & $5.64\%$ & $+0.294$ & $20.44\%$ \\
+    & Deployed repair & 105 & $\num{3.35e-9}$ & $3.12\%$ & $+0.654$ & $8.12\%$ \\
+    & Deployed repair & 120 & $\num{1.49e-9}$ & $1.22\%$ & $+0.988$ & $2.30\%$ \\
+    & Deployed repair & 150 & $\num{1.36e-9}$ & $0.95\%$ & $+0.999$ & $1.56\%$ \\
+    & Final & 219 & $\num{1.34e-9}$ & $1.04\%$ & $+0.999$ & $1.65\%$ \\
   \midrule
-  \multirow{6}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~B}}
-  & Fast shape alignment
-    & 1
-    & $\num{1.11e-7}$
-    & $0.00\%$
-    & $+0.941$
-    & $10.1\%$ \\
-  & Onset of excursion
-    & 20
-    & $\num{2.78e-9}$
-    & $1.56\%$
-    & $+0.955$
-    & $2.91\%$ \\
-  & Rebound / peak violation
-    & 25
-    & $\num{3.85e-9}$
-    & $2.00\%$
-    & $+0.965$
-    & $2.73\%$ \\
-  & Recovery
-    & 45
-    & $\num{2.11e-9}$
-    & $0.69\%$
-    & $+0.998$
-    & $2.08\%$ \\
-  & Secondary dip
-    & 68
-    & $\num{1.43e-9}$
-    & $1.30\%$
-    & $+0.994$
-    & $1.91\%$ \\
-  & Final
-    & 219
-    & $\num{1.34e-9}$
-    & $1.04\%$
-    & $+0.999$
-    & $1.69\%$ \\
+  \multirow{6}{*}{Path~B (Direct)}
+    & Rapid descent & 1 & $\num{1.11e-7}$ & $0.00\%$ & $+0.941$ & $10.11\%$ \\
+    & Excursion onset & 20 & $\num{2.78e-9}$ & $1.56\%$ & $+0.955$ & $2.91\%$ \\
+    & Excursion trough & 21 & $\num{2.62e-9}$ & $1.65\%$ & $+0.958$ & $2.86\%$ \\
+    & Peak violation & 25 & $\num{3.85e-9}$ & $2.00\%$ & $+0.965$ & $2.73\%$ \\
+    & Rebound peak & 28 & $\num{4.40e-9}$ & $1.91\%$ & $+0.970$ & $2.60\%$ \\
+    & Final & 219 & $\num{1.34e-9}$ & $1.04\%$ & $+0.999$ & $1.69\%$ \\
   \midrule
-  \multirow{2}{*}{\rotatebox[origin=c]{90}{\footnotesize C}}
-  & Cold start
-    & 0
-    & ---
-    & $0.00\%$
-    & ---
-    & --- \\
-  & Final
-    & 219
-    & $\num{1.34e-9}$
-    & $1.04\%$
-    & ---
-    & --- \\
-  & Peak violation
-    & ---
-    & ---
-    & $1.22\%$
-    & ---
-    & --- \\
+  \multirow{3}{*}{Path~C (Cold start)}
+    & Origin ($\theta = \mathbf{0}$) & 0 & $\num{6.19e-7}$ & $0.00\%$ & $-0.157$ & $29.38\%$ \\
+    & Peak violation & 28 & $\num{6.71e-8}$ & $1.22\%$ & $+0.920$ & $12.45\%$ \\
+    & Final & 219 & $\num{1.34e-9}$ & $1.04\%$ & $+0.999$ & $1.69\%$ \\
 \end{tabular}
 \end{ruledtabular}
 \end{table*}
 
-Table~\ref{tab:telemetry} presents the traversal telemetry.
-Key observations:
+Figure~\ref{fig:results} and Table~\ref{tab:telemetry} present the audited
+traversal telemetry:
 
-\paragraph{Endpoints are identical.}
-All three paths converge to the same final loss ($\num{1.34e-9}$) and
-violation ($1.04\%$). This is expected: the loss is convex, so the minimizer
-is unique. The convergence diagnostic
-$C_{AB} = \num{6.93e-6}$ confirms numerical agreement.
-All final models exhibit ${\sim}\,1\%$ residual violation, reflecting the
-intrinsic tension between the unmodeled wall perturbation and the realizability
-constraint.
+\paragraph{Identical convergence endpoints.}
+All three paths converge to the identical final loss ($\num{1.3412e-9}$) and
+residual violation ($1.04\%$). The parameter agreement is
+$\|\theta_A^* - \theta_B^*\| = \num{3.16e-5}$ and
+$\|\theta_A^* - \theta_C^*\| = \num{3.04e-5}$, with convergence diagnostic
+$C_{AB} = \num{6.93e-6}$. This agreement is mathematically guaranteed by the
+convexity of the objective. The residual $1.04\%$ violation reflects the
+Pareto balance between empirical fit and the unmodeled wall stress perturbation.
 
-\paragraph{Path~B's rebound.}
-Between steps~20 and~27, Path~B's loss increases by a factor of $1.39\times$
-(from $\num{2.78e-9}$ to $\num{3.85e-9}$), coinciding with a peak violation
-of $2.00\%$. A secondary dip occurs at step~68 ($1.30\%$ violation,
-$\rho$ drops from $0.998$ to $0.994$).
+\paragraph{Direct path rebound.}
+In Path~B, the loss descends to a local minimum of $\num{2.62e-9}$ at step~21,
+then rebounds to $\num{4.40e-9}$ at step~28---a factor of $1.68\times$---before
+resuming its descent. Realizability violation peaks at $2.00\%$ at step~25
+(where loss is $\num{3.85e-9}$, $1.39\times$ relative to step~20).
 
-\paragraph{Path~A's scaffold relocation.}
-Path~A's scaffold phase peaks at $5.64\%$ violation---higher than Path~B's
-worst ($2.00\%$). The scaffold is discarded at step~100; the deployed
-Stratum~2 model then repairs essentially monotonically
-($5.64\% \to 3.12\% \to 1.22\% \to 1.04\%$), with small late fluctuations
-(violation $0.95\%$ at step~150 $\to$ $1.04\%$ at step~219;
-$|\Delta\rho| < 0.001$).
+\paragraph{Scaffold inheritance in staged calibration.}
+In Path~A, the intermediate scaffold ($\mathcal{M}_1$) peaks at $6.08\%$
+violation. At the hop (step~100), zero-padding preserves the prediction
+identically ($\delta_R = 0.000000000000000\times 10^0$ to machine precision).
+Consequently, the deployed Stratum~2 model \emph{inherits} the full $5.64\%$
+violation of the scaffold at step~100, briefly rising to $5.90\%$ during early
+repair before decaying essentially monotonically to $1.04\%$. Staging does not
+relocate violations away from the deployed model; it merely concentrates the
+subsequent repair into the deployed phase.
 
-\paragraph{Cold start outperforms on peak violation.}
-Path~C's peak violation ($1.22\%$) is lower than both Path~A ($5.64\%$) and
-Path~B ($2.00\%$), while reaching the same final loss. Without prior momentum
-to overshoot the penalty barrier, the cold-start trajectory stays closer to
-the realizable set throughout.
+\paragraph{Cold start minimizes peak violation.}
+Path~C reaches the shared minimizer with a peak violation of only $1.22\%$
+(step~28), outperforming both Path~B ($2.00\%$) and Path~A's deployed phase
+($5.64\%$). Initialized from $\theta = \mathbf{0}$, the optimizer travels
+directly toward the minimum without prior momentum driving it deep into the
+boundary penalty.
 
-\subsection{Mechanism Identification: The $2\times 2$ Ablation Matrix}
+\subsection{Mechanism Identification and Optimizer Ablations}
 \label{sec:mechanism}
 
 \begin{table}[t]
-\caption{The $2\times 2$ ablation matrix crossing basis scaling with optimizer
-  choice. Path~B peak violation and rebound ratio
-  ($\max_{i \in [10,80]} L_i / \min_{j < i} L_j$) under each condition.
-  The rebound is entirely an Adam artifact: plain GD produces zero violations
-  regardless of basis scaling. Normalizing the basis with Adam makes things
-  catastrophically worse ($21.8\%$ violation, $834\times$
-  rebound).}\label{tab:ablation}
+\caption{Optimizer and basis-scaling ablation for Path~B.
+  The peak violation is governed by travel distance per step and adaptive
+  coordinate scaling, not Gram matrix ill-conditioning. Convergent plain GD
+  traverses unrealizable states ($6.25\%$ violation), while inert GD
+  ($\alpha = \num{2e-3}$) produces $0.00\%$ only because it remains stationary.}\label{tab:ablation}
 \begin{ruledtabular}
 \begin{tabular}{lS[table-format=2.2]S[table-format=3.1]c}
-  Condition
-    & {Peak viol.\ (\%)}
-    & {Rebound ratio}
-    & Final loss \\
+  Condition & {Peak viol.\ (\%)} & {Rebound ratio} & Final loss \\
   \midrule
-  Raw + Adam
-    & 2.00 & 1.7 & $\num{1.34e-9}$ \\
-  Norm.\ + Adam
-    & 21.79 & 834.0 & $\num{1.34e-9}$ \\
-  Raw + Plain GD
-    & 0.00 & 1.0 & $\num{1.23e-7}$ \\
-  Norm.\ + Plain GD
-    & 0.61 & 1.0 & $\num{3.18e-8}$ \\
+  Raw Adam (baseline) & 2.00 & 1.68 & $\num{1.3412e-9}$ \\
+  Raw Adam ($\beta_1 = 0$, no momentum) & 1.30 & 1.05 & $\num{1.4360e-9}$ \\
+  Raw Plain GD (convergent $\alpha \approx 7324$) & 6.25 & 1.00 & $\num{1.3412e-9}$ \\
+  Raw Plain GD (inert $\alpha = \num{2e-3}$) & 0.00 & 1.00 & $\num{1.2263e-7}$ \\
+  Norm.\ Adam ($\alpha$ rescaled to $\num{3.6e-4}$) & 12.50 & 2.20 & $\num{1.3412e-9}$ \\
+  Norm.\ Adam (fixed $\alpha = \num{2e-3}$) & 21.79 & 834.0 & $\num{1.3412e-9}$ \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
 
-Table~\ref{tab:ablation} presents the ablation matrix. The results are
-unambiguous:
+Table~\ref{tab:ablation} and Figure~\ref{fig:results}(c) present the ablation
+suite isolating the mechanism of realizability excursions:
 \begin{enumerate}
-  \item \textit{Plain GD eliminates all violations.} Under plain gradient
-    descent ($\alpha = \num{2e-3}$, no momentum), Path~B produces $0.00\%$
-    peak violation with the raw basis and $0.61\%$ with the normalized basis.
-    There is no rebound. Plain GD has not converged to the final loss within
-    220 steps, but no realizability violations occur during the descent.
-  \item \textit{Normalizing the basis makes Adam worse, not better.}
-    Unit-normalizing each $T^{(n)}$ to $\|T^{(n)}\|_{L^2} = 1$
-    increases Path~B's peak violation from $2.00\%$ to $21.79\%$ and the
-    rebound ratio from $1.7\times$ to $834\times$. This is the opposite of
-    what a Gram-conditioning explanation would predict.
-  \item \textit{The mechanism is Adam momentum overshoot.} Adam's adaptive
-    step-size and momentum cause the optimizer to overshoot into the
-    unrealizable region, triggering the penalty barrier. The raw basis's
-    scale disparity ($\|T^{(4)}\| \approx \|T^{(1)}\|/5.6$) actually
-    \emph{suppresses} Adam's effective step on $\theta_3$, limiting the
-    violation. Normalizing removes this implicit regularization.
+  \item \textit{The role of step size and travel distance.}
+    With $\alpha = \num{2e-3}$ and $\lambda_{\max}(G) = \num{1.37e-4}$,
+    $\alpha\lambda_{\max} \approx \num{2.7e-7}$. The leading error mode decays
+    by only $\exp(-220 \times \num{2.7e-7}) \approx 0.99994$ over 220 steps.
+    This arm produced $0.00\%$ violation solely because it remained stationary
+    (final loss $\num{1.23e-7}$ equals step-0 loss).
+    When plain GD operates at a step size matched to the Lipschitz constant
+    ($\alpha = 1/\lambda_{\max} \approx 7324$), it converges to $\num{1.34e-9}$
+    and produces a peak violation of $6.25\%$. Transient violations occur
+    whenever an optimizer travels through parameter space at a rate sufficient
+    to converge.
+  \item \textit{Momentum vs.\ adaptivity.}
+    Setting $\beta_1 = 0$ in Adam (eliminating first-moment momentum while
+    retaining per-coordinate second-moment scaling) reduces Path~B's peak
+    violation from $2.00\%$ to $1.30\%$, and the rebound ratio from $1.68\times$
+    to $1.05\times$. First-moment momentum amplifies boundary overshoot, but
+    excursions occur even in its absence.
+  \item \textit{Broken scale-invariance of Adam.}
+    Adam's scale invariance is broken by the fixed absolute learning rate $\alpha$.
+    Unit-normalizing the basis rescales the parameter coordinates by
+    $\|T^{(n)}\|$ while keeping $\alpha = \num{2e-3}$ fixed, effectively
+    multiplying the step size along the $T^{(4)}$ direction by $\approx 5.6$.
+    This causes severe overshooting ($21.79\%$ violation, $834\times$ rebound).
+    Rescaling $\alpha$ by the norm ratio ($\alpha \to \num{3.6e-4}$) reduces peak
+    violation to $12.50\%$. The raw basis's small norm $\|T^{(4)}\|$ provided
+    implicit step-size regularization.
 \end{enumerate}
+
+\subsection{Optimizer Restart and Carry-Over Controls}
+\label{sec:controls}
+
+To test whether Path~A's monotone deployed repair is an artifact of resetting
+Adam's momentum buffers at step~100, we evaluated two controls:
+\begin{itemize}
+  \item \textit{Path~B with Adam restart at step~100:} Resetting $m=v=0$ at
+    step~100 in Path~B yields a post-restart peak violation of $1.22\%$ and a
+    rebound ratio of $1.057\times$.
+  \item \textit{Path~A carrying momentum across the hop:} Zero-padding $m$ and
+    $v$ across the transition yields a deployed peak violation of $5.64\%$.
+\end{itemize}
+Both controls confirm that resetting momentum stabilizes subsequent descent,
+reinforcing that momentum interaction with the penalty barrier governs the
+transient dynamics.
 
 \subsection{Frozen-Coefficient Ablation}\label{sec:frozen}
 
-To test whether the staged protocol genuinely creates a ``sequence of
-well-conditioned subproblems,'' we ran Path~A with
-$\theta_0, \theta_1, \theta_2$ frozen in phase~2 (only $\theta_3$ optimized).
-The frozen path reaches a final loss of $\num{2.78e-9}$---$2.1\times$ higher
-than the unfrozen Path~A ($\num{1.34e-9}$)---because freezing prevents
-$\theta_0$--$\theta_2$ from adjusting to accommodate the newly active
-$T^{(4)}$. The standard Path~A does not implement a sequence of independent
-subproblems; it warm-starts the full $d=4$ problem using the $d=3$ solution.
+To evaluate whether staging effectively solves a ``sequence of subproblems,''
+we ran Path~A with $\theta_0, \theta_1, \theta_2$ frozen in phase~2 (only
+$\theta_3$ optimized). The frozen path converges to a final loss of
+$\num{2.78e-9}$ ($2.1\times$ higher than unfrozen Path~A, $\num{1.34e-9}$)
+and retains $2.86\%$ residual violation. Freezing prior coefficients prevents
+them from adjusting to accommodate the newly active cubic tensor; staging
+does not decompose the optimization into decoupled subproblems.
 
-\subsection{Penalty Modulation}\label{sec:sweep}
+\subsection{Penalty Modulation Sweep}\label{sec:sweep}
 
 \begin{table}[t]
-\caption{Penalty modulation sweep for Paths A and B.
-  Peak and final violation fractions for Path~B, and
-  convergence diagnostic $C_{AB}$.}\label{tab:sweep}
+\caption{Penalty modulation sweep for Paths~A and~B. Both paths converge to
+  $1.48\%$ violation at $\lambda = 0$ because the unconstrained least-squares
+  optimum is itself unrealizable, inheriting the $1.56\%$ violation of the
+  perturbed reference field $\tref$.}\label{tab:sweep}
 \begin{ruledtabular}
-\begin{tabular}{lS[table-format=1.2]S[table-format=1.2]l}
+\begin{tabular}{lS[table-format=1.2]S[table-format=1.2]S[table-format=1.2]S[table-format=1.2]l}
   $\lambda$
-    & {B peak viol.\ (\%)}
-    & {B end viol.\ (\%)}
+    & {A scaf.\ (\%)}
+    & {A depl.\ (\%)}
+    & {B peak\ (\%)}
+    & {B end\ (\%)}
     & $C_{AB}$ \\
   \midrule
-  $0$ (unconstrained)
-    & 2.78 & 1.48 & $\num{2.38e-5}$ \\
-  $150$ (baseline)
-    & 2.00 & 1.04 & $\num{6.93e-6}$ \\
-  $1500$ (stiff)
-    & 1.30 & 0.52 & $\num{8.81e-6}$ \\
+  $0$ (unconstrained) & 6.25 & 6.08 & 2.78 & 1.48 & $\num{2.38e-5}$ \\
+  $150$ (baseline)    & 6.08 & 5.90 & 2.00 & 1.04 & $\num{6.93e-6}$ \\
+  $1500$ (stiff)      & 5.47 & 2.95 & 1.30 & 0.52 & $\num{8.81e-6}$ \\
 \end{tabular}
 \end{ruledtabular}
 \end{table}
 
-Table~\ref{tab:sweep} shows that the unconstrained trajectory
-($\lambda = 0$) exhibits the largest excursion ($2.78\%$), confirming that
-the direct path naturally traverses unrealizable parameter space. The penalty
-modulates the excursion magnitude; it does not cause it. The convergence
-diagnostic $C_{AB}$ is non-monotone in $\lambda$ and minute in all cases
-($< \num{3e-5}$), consistent with convergence to a shared convex minimum.
+Table~\ref{tab:sweep} presents the penalty sweep across $\lambda \in \{0, 150, 1500\}$.
+At $\lambda = 0$, both paths converge to identical endpoints with $1.48\%$
+residual violation. This occurs because the reference field $\tref$ contains an
+unmodeled wall perturbation that renders it slightly unrealizable ($1.56\%$
+violation). The penalty parameter $\lambda_{\mathrm{realiz}}$ acts as a Pareto
+weight trading empirical fit against physical realizability, reducing the
+residual violation to $1.04\%$ ($\lambda=150$) and $0.52\%$ ($\lambda=1500$).
+
+\subsection{Calibrated Coefficients}\label{sec:coefficients}
+
+The final calibrated parameters across all three protocols are:
+\begin{align}
+  \theta_A^* &= [0.089508,\, 0.051758,\, {-}0.035444,\, 0.040985]\,, \\
+  \theta_B^* &= [0.089509,\, 0.051764,\, {-}0.035437,\, 0.041015]\,, \\
+  \theta_C^* &= [0.089507,\, 0.051763,\, {-}0.035437,\, 0.041014]\,.
+\end{align}
+All three match to four significant digits. Compared to the generating
+coefficients $c^{\mathrm{true}} = [0.090,\, 0.045,\, {-}0.035,\, 0.060]$, the
+discrepancy $\|\theta^* - c^{\mathrm{true}}\| = 0.0202$ reflects the unmodeled
+wall perturbation.
 
 % ============================================================================
-\section{Discussion}\label{sec:discussion}
+\section{Discussion and Outlook}\label{sec:discussion}
 % ============================================================================
 
-\paragraph{Limitations.}
-Three scope constraints should be noted. First, all experiments use synthetic
-surrogate fields reproducing the DNS profiles of Pinelli et
-al.~\cite{Pinelli2010} rather than true DNS data; the framework's behavior
-under real turbulence statistics remains to be validated. Second, the task loss
-is evaluated \emph{a~priori} on fixed mean-field data rather than coupled to a
-live Navier--Stokes solver, so the practical implications of transient
-realizability violations for coupled solvers remain a motivated conjecture.
-Third, all structural edits are vertical, nested inclusions; the horizontal
-regime where the geometric machinery is most needed is deferred to future work.
+\paragraph{What this study establishes.}
+In a convex, constant-coefficient, \emph{a~priori} calibration, neither staged
+nor warm-started calibration confers an advantage in convergence speed, endpoint
+accuracy, or peak realizability violation over an un-staged cold start. Zero-padding
+preserves predictions identically ($\delta_R \equiv 0$), meaning the deployed
+model inherits whatever boundary violations were accumulated by the scaffold.
+Cold start ($\theta = \mathbf{0}$) achieves the lowest peak violation ($1.22\%$)
+and reaches the identical minimum without transient loss rebounds.
 
-\paragraph{What staging achieves in this setting.}
-In this convex, constant-coefficient, \emph{a~priori} setting, staging
-calibration through intermediate subspaces does not improve convergence speed
-(Path~B plateaus ${\sim}\,25$ steps earlier), endpoint accuracy (all paths
-converge to the same minimizer), or peak violation (the cold start achieves
-$1.22\%$ vs.\ Path~B's $2.00\%$ and Path~A's $5.64\%$). What staging
-achieves is a qualitative change in the deployed trajectory: after the
-scaffold is discarded, the Stratum~2 model repairs essentially monotonically,
-whereas direct calibration exhibits transient rebounds and violation spikes
-driven by Adam momentum overshoot.
+\paragraph{Gram conditioning vs.\ optimizer mechanics.}
+The initial conjecture that Gram matrix ill-conditioning ($\kappa = 64.1$)
+governs the transient rebound is disproven by the ablation suite. The condition
+number is predominantly a basis scaling artifact (collapsing to $\kappa = 5.99$
+under normalization), and convergent plain gradient descent exhibits similar
+excursions ($6.25\%$). Transient excursions are a geometric consequence of
+cutting across the non-convex realizability boundary during descent, modulated
+by step size and momentum.
 
-\paragraph{The role of Gram conditioning.}
-The Gram matrix's block-diagonal structure and the $\kappa = 64.1 \to 6.0$
-collapse under unit-normalization show that the raw condition number is a
-scaling artifact, not a fundamental obstruction. Adam's approximate
-diagonal-scaling invariance largely negates the effect of
-$\kappa(G)$; the transient instability is driven by momentum overshoot into
-the penalty barrier, not by ill-conditioning. The $R_{34} = -0.714$
-correlation within the $(\theta_2, \theta_3)$ block is real but its effect is
-masked by Adam's per-coordinate adaptation.
-
-\subsection{Outlook: Non-Nested Edits and Learned Transports}
+\subsection{Outlook: The Horizon for Non-Trivial Geometry}
 \label{sec:outlook}
-
-The present study lives in the simplest corner of the Stratified Design Atlas:
-nested subspaces, convex loss, zero-padding exact by construction. The
-framework becomes non-trivial when extended to:
-\begin{enumerate}
-  \item \textit{Non-nested (horizontal) structural edits}: swapping
-    basis tensors, changing turbulent timescale formulations, or transitioning
-    between model families ($k$-$\epsilon$ $\leftrightarrow$
-    $k$-$\omega$~SST). In these settings, no subspace inclusion exists,
-    and transport maps must be learned via functional push-forward
-    matching~\cite{Wallin2000}:
-    \begin{equation}\label{eq:learned}
-      \Gamma_H(\theta_A) = \arg\min_{\theta_B \in \Theta_B}
-      \int_\Omega \|\tau_B(\bx;\theta_B)
-      - \tau_A(\bx;\theta_A)\|_F^2\, dA\,.
-    \end{equation}
-    For families linear in $\theta$, this reduces to a closed-form
-    least-squares projection
-    $\Gamma_H = G_B^{-1} G_{BA}\, \theta_A$. Genuinely learned
-    connections require non-linear model families.
-  \item \textit{Non-convex losses}: coupling to a Navier--Stokes solver
-    or using non-linear coefficient functions $c_n(\bI)$ makes the loss
-    non-convex, so different paths may converge to different local minima.
-    The convergence diagnostic $C_{AB}$ would then reflect genuine
-    path-dependence, and the round-trip metric
-    $\Gamma_{B \to A}(\Gamma_{A \to B}(\theta_A)) - \theta_A$ would measure
-    holonomy---the geometric signature of curvature in the design space.
-\end{enumerate}
 
 \begin{figure}[t]
 \centering
@@ -831,10 +774,10 @@ framework becomes non-trivial when extended to:
       font=\scriptsize, midway
     }
   ]
-  % --- This work: Vertical (left column) ---
-  \node[stratum] (S0L) {Stratum~0\\(Linear)};
-  \node[stratum, above=of S0L] (S1L) {Stratum~1\\(Quadratic)};
-  \node[stratum, above=of S1L] (S2L) {Stratum~2\\(Cubic)};
+  % --- Vertical: Nested (left column) ---
+  \node[stratum] (S0L) {Stratum~0\\(Linear Boussinesq)};
+  \node[stratum, above=of S0L] (S1L) {Stratum~1\\(Quadratic Pope)};
+  \node[stratum, above=of S1L] (S2L) {Stratum~2\\(Cubic Pope)};
 
   \draw[edge_exact] (S0L) -- (S1L)
     node[label_style, right=2pt] {$T_e$\;(zero-pad, $\dR\!\equiv\!0$)};
@@ -842,9 +785,9 @@ framework becomes non-trivial when extended to:
     node[label_style, right=2pt] {$T_e$\;(zero-pad, $\dR\!\equiv\!0$)};
 
   \node[above=0.3cm of S2L, font=\footnotesize\bfseries, blue!60!black]
-    {This work: Nested};
+    {This work: Nested Subspaces};
 
-  % --- Future: Horizontal (right column) ---
+  % --- Horizontal: Non-nested (right column) ---
   \node[stratum2, right=3.8cm of S0L] (S0R) {Stratum~0\\($k$--$\omega$ SST)};
   \node[stratum2, above=of S0R] (S1aR) {Stratum~1a\\(Craft Cubic)};
   \node[stratum2, above=of S1aR] (S1bR) {Stratum~1b\\(Wallin--Johansson)};
@@ -855,57 +798,70 @@ framework becomes non-trivial when extended to:
     node[label_style, right=2pt] {$\Gamma_H$\;(learned)};
 
   \node[above=0.3cm of S1bR, font=\footnotesize\bfseries, red!60!black]
-    {Future: Non-nested};
+    {Future: Non-nested Strata};
 \end{tikzpicture}
-\caption{Nested vs.\ non-nested structural edits. This work studies
-  vertical inclusions where zero-padding is exact by construction.
-  The geometric framework becomes non-trivial for horizontal edits
-  (basis swaps, model family transitions) where transport maps $\Gamma_H$
-  must be learned and path-dependence requires non-convex
-  losses.}\label{fig:horizon}
+\caption{Nested vs.\ non-nested structural transitions in the Stratified Design
+  Atlas. Vertical transitions (left) are coordinate inclusions where zero-padding
+  is exact by construction. Non-nested transitions (right) require learned
+  functional transports $\Gamma_H$ and non-convex losses for geometric
+  curvature and holonomy to emerge.}\label{fig:horizon}
 \end{figure}
+
+The Stratified Design Atlas formalism (Figure~\ref{fig:horizon}) reveals
+precisely what ingredients are required for design space geometry to become
+non-trivial:
+\begin{enumerate}
+  \item \textit{Non-nested (horizontal) transitions.} When mutating between
+    distinct model families (e.g., swapping timescale formulations or moving
+    from $k$-$\epsilon$ to $k$-$\omega$), no coordinate subspace inclusion
+    exists. Transport maps must be learned via functional projection:
+    \begin{equation}\label{eq:learned}
+      \Gamma_H(\theta_A) = \arg\min_{\theta_B \in \Theta_B}
+      \int_\Omega \|\tau_B(\bx;\theta_B) - \tau_A(\bx;\theta_A)\|_F^2\, dA\,.
+    \end{equation}
+    For linear-in-$\theta$ families, Eq.~(\ref{eq:learned}) reduces to a
+    closed-form linear least-squares projection
+    $\Gamma_H = G_B^{-1} G_{BA}\, \theta_A$. The round-trip discrepancy
+    $\Gamma_{B \to A}(\Gamma_{A \to B}(\theta_A)) - \theta_A$ in that case is
+    a linear subspace mismatch defect, not geometric curvature.
+  \item \textit{Non-convexity and coupled evaluation.} Genuinely learned
+    connections and geometric holonomy require non-convex losses, which arise
+    naturally when models are evaluated \emph{a~posteriori} in a coupled
+    Navier--Stokes solver, or when nonlinear coefficient neural networks
+    $c_n(\bI)$ are introduced.
+\end{enumerate}
 
 \subsection{Summary of Contributions}\label{sec:contributions}
 
 \begin{enumerate}
-  \item Proposed a geometric framework (Stratified Design Atlas) for
-    organizing turbulence closure model families, and demonstrated its
-    simplest instantiation---nested constant-coefficient Pope subspaces
-    with zero-padding embeddings---in a controlled \emph{a~priori} study.
-  \item Quantified the stress-representability gap between linear and
-    quadratic Pope strata, recovering the classical Speziale~\cite{Speziale1987}
-    result that linear closures produce anti-aligned secondary vorticity
-    forcing ($\rho = -0.157$, $29.38\%$ reversed).
-  \item Demonstrated that staged calibration relocates transient
-    realizability violations into a discardable scaffold stratum, yielding
-    essentially monotone deployment dynamics.
-  \item Through a $2\times 2$ ablation matrix, identified the transient
-    instability mechanism as Adam momentum overshoot, not Gram matrix
-    ill-conditioning. The raw basis's scale disparity implicitly
-    regularizes Adam's step on $\theta_3$; unit-normalizing
-    removes this regularization and increases peak violation from
-    $2.0\%$ to $21.8\%$.
-  \item A cold-start baseline ($\theta = 0$) contextualizes the
-    warm-starting advantage: it converges to the same endpoint with lower
-    peak violation, showing that staging benefits are specific to
-    momentum-based optimizers.
+  \item Formalized candidate turbulence closures within a Stratified Design
+    Atlas and characterized its simplest instantiation (nested Pope subspaces,
+    constant coefficients, convex loss) as an auditable baseline.
+  \item Quantified the secondary stress-representability gap for the square
+    duct, recovering Speziale's classical result that linear closures produce
+    anti-aligned secondary vorticity forcing ($\rho = -0.157$, $29.4\%$ reversed).
+  \item Demonstrated that staged calibration inherits scaffold realizability
+    violations at deployment ($\delta_R \equiv 0$), while an un-staged cold start
+    achieves the lowest peak violation ($1.22\%$) throughout the descent.
+  \item Disproved the Gram-conditioning instability hypothesis via an ablation
+    suite, showing that transient excursions are governed by per-step travel
+    distance and adaptive coordinate scaling, with convergent plain GD also
+    violating realizability ($6.25\%$).
+  \item Identified the necessary conditions for design space geometry to become
+    non-trivial, providing a concrete roadmap for non-nested model discovery.
 \end{enumerate}
 
 % ============================================================================
 \begin{acknowledgments}
-The authors thank the contributors to the NumPy, SciPy, and Matplotlib
-projects, whose open-source software made this work possible.
+The authors acknowledge the NumPy, SciPy, and Matplotlib open-source communities.
 \end{acknowledgments}
 % ============================================================================
 
 \paragraph*{Data and Code Availability.}
-All source code, experiment scripts, committed telemetry data
-(\texttt{results\_curvature\_experiment.json},
-\texttt{results\_audit\_experiments.json}), and publication figures
-are available in the public repository at
+All source code, telemetry databases (\texttt{results\_curvature\_experiment.json},
+\texttt{results\_audit\_experiments.json}, \texttt{results\_round2_controls.json}),
+and figure scripts are available at
 \url{https://github.com/okuhlemadondo/OpDiscovery-FluidMech}.
-Every numerical value reported in this paper can be reproduced from the
-committed database using the provided scripts.
 
 \begin{thebibliography}{9}
 
