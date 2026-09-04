@@ -479,7 +479,7 @@ visualization.
     & $-0.15732$
     & $29.38\%$ \\
   \midrule
-  \multirow{4}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~A}}
+  \multirow{7}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~A}}
   & Stratum~1 scaffold
     & 50
     & $\num{5.0321e-9}$
@@ -523,7 +523,7 @@ visualization.
     & $+0.99918$
     & $1.65\%$ \\
   \midrule
-  \multirow{4}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~B}}
+  \multirow{6}{*}{\rotatebox[origin=c]{90}{\footnotesize Path~B}}
   & Fast shape alignment
     & 1
     & $\num{1.1058e-7}$
@@ -670,6 +670,18 @@ Design Atlas: exact canonical transport eliminates realization drift
 ($\dR = 0$), while intermediate strata act as physical curricula that
 partially diagonalize ill-conditioned parameter landscapes.
 
+\paragraph{Limitations.}
+Three scope constraints should be noted. First, all experiments use synthetic
+surrogate fields reproducing the DNS profiles of Pinelli et
+al.~\cite{Pinelli2010} rather than true DNS data; the framework's behavior
+under real turbulence statistics remains to be validated. Second, the task loss
+is evaluated \emph{a~priori} on fixed mean-field data rather than coupled to a
+live Navier--Stokes solver, so the dynamical-quality claims for online CFD
+(Sec.~\ref{sec:dynamics}) remain motivated conjectures pending \emph{a~posteriori}
+verification. Third, all structural edits studied here are vertical, nested
+inclusions; the horizontal regime where the geometric machinery is most needed
+is deferred to Paper~2.
+
 However, all transitions studied in Paper~1 are \emph{vertical, nested
 inclusions} ($\mathcal{M}_s \subset \mathcal{M}_{s'}$), where exact
 zero-padding transport is mathematically guaranteed. The full power of the
@@ -785,10 +797,19 @@ geometric curvature in the space of turbulence closures.
 
 % ============================================================================
 \begin{acknowledgments}
-The authors thank the contributors to the OpenFOAM, NumPy, and SciPy projects,
-whose open-source software made this work possible.
+The authors thank the contributors to the NumPy, SciPy, and Matplotlib
+projects, whose open-source software made this work possible.
 \end{acknowledgments}
 % ============================================================================
+
+\paragraph*{Data and Code Availability.}
+All source code, experiment scripts, committed telemetry data
+(\texttt{results\_curvature\_experiment.json} including full
+\texttt{f\_corr} and \texttt{f\_reversed} series), and publication figures
+are available in the public repository at
+\url{https://github.com/okuhlemadondo/OpDiscovery-FluidMech}.
+Every numerical value reported in this paper can be reproduced from the
+committed database using the provided scripts.
 
 \begin{thebibliography}{8}
 
