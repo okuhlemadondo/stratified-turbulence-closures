@@ -1,4 +1,4 @@
-# OpDiscovery-FluidMech: Staged Calibration of Tensor-Basis Turbulence Closures
+# Stratified Turbulence Closures: Staged Calibration of Tensor-Basis Models
 
 An implementation and validation framework for **staged vs. direct calibration of tensor-basis turbulence closures**, applied to constant-coefficient Pope expansions on a synthetic square duct benchmark.
 
