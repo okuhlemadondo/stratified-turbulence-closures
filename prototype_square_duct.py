@@ -27,7 +27,7 @@ class SquareDuctQuadrant:
     """
     Square duct quadrant domain (y, z) in [0, h] x [0, h].
     Walls at y = 0 (bottom) and z = 0 (side). Symmetry at y = h and z = h.
-    Surrogate for Vinuesa et al. (2014) / Pinelli et al. (2010) at Re_tau ≈ 360.
+    Surrogate for Vinuesa et al. (2014) / Pinelli et al. (2010) at Re_tau ≈ 300.
     """
     def __init__(self, h=1.0, Ny=48, Nz=48):
         self.h = h

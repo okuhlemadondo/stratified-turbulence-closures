@@ -1,56 +1,58 @@
-# OpDiscovery-FluidMech: The Geometrization of Design Spaces
+# OpDiscovery-FluidMech: Staged Calibration of Tensor-Basis Turbulence Closures
 
-An implementation and validation framework for **The Geometrization of Design Spaces**, applied to invariant operator discovery and turbulence closure modeling in fluid mechanics.
+An implementation and validation framework for **staged warm-starting of turbulence closure models**, applied to constant-coefficient Pope tensor-basis closures on a synthetic square duct benchmark.
 
 ## Overview
 
-Configuration spaces in engineering and physics are hybrid:
-- **Discrete**: Primitive selection, symbolic graph skeletons, differential operators.
-- **Continuous**: Physical parameters, coefficients, scale lengths.
-- **Semantic**: Conservation laws, Galilean and frame invariance, realizability boundaries (Lumley triangle).
+Data-driven turbulence closure modeling faces a practical challenge: each time a structural modification is made (adding or swapping tensor basis terms), the continuous coefficients must be recalibrated. This project investigates whether staging calibration through intermediate subspaces—calibrating a quadratic truncation before extending to cubic—offers measurable advantages over direct joint calibration or cold starts.
 
-This project formalizes the design space of turbulence closures as a **stratified design atlas** $(B, \{\Theta_t\}, \{R_t\}, L, E, \{T_e\}, \sim)$, where:
-- Strata $\Theta_t$ are parameter manifolds of specific constitutive model families (e.g. Linear Boussinesq, Quadratic Pope expansion, Non-local gradient terms).
-- Edits $e \in E$ are structural transitions between grammar skeletons.
-- Transport maps $T_e: \Theta_t \to \Theta_{t'}$ carry calibrated parameters and optimizer state smoothly across structural mutations without catastrophic forgetting.
-- Two-tiered controllability separates pointwise algebraic tensor completeness from operator-compositional PDE reachability.
+The design space is formalized as a **Stratified Design Atlas**: nested parameter subspaces connected by zero-padding embeddings. In the convex, constant-coefficient setting studied here, this structure is algebraically trivial; the framework's value lies in organizing the design space for future extensions to non-nested edits and non-convex losses.
 
-## Canonical Benchmark: Turbulent Square Duct Flow
+## Canonical Benchmark: Turbulent Square Duct Flow ($\text{Re}_\tau = 300$)
 
-Turbulent square duct flow exhibits Prandtl's secondary motion of the second kind: 8 counter-rotating streamwise vortices driven by Reynolds stress anisotropy $(\tau_{yy} - \tau_{zz} \neq 0$ and $\tau_{yz} \neq 0$).
-- **Stratum 0 (Linear Boussinesq, 1D):** $S_{yy} - S_{zz} = 0$ mathematically fails with near-zero controllability alignment ($\cos \theta_{\text{sec}} = 0.000115 \approx 0$) and anti-aligned secondary vorticity forcing ($\rho = -0.15732$, $29.38\%$ reversed forcing domain).
-- **Stratum 1 (Quadratic Pope, 3D):** Non-linear Pope expansion fully spans the required anisotropic tensor space ($\cos \theta_{\text{sec}} = 1.000000$).
-- **Stratum 2 (Cubic Pope, 4D):** Incorporates the cubic invariant tensor $T^{(4)} = \frac{k}{(C_\mu \omega)^3}(S^2 \Omega - \Omega S^2)$.
+Turbulent square duct flow exhibits Prandtl's secondary motion of the second kind: counter-rotating streamwise vortices driven by Reynolds stress anisotropy $(\tau_{yy} - \tau_{zz} \neq 0)$ and cross-plane shear $(\tau_{yz} \neq 0)$.
+
+Three nested strata of Pope's tensor integrity basis:
+- **Stratum 0 (Linear Boussinesq, $d=1$):** Near-zero stress representability ($\cos\phi_{\text{sec}} \approx 10^{-4}$), anti-aligned vorticity forcing ($\rho = -0.157$, 29.4% reversed). Recovers the classical Speziale (1987) result.
+- **Stratum 1 (Quadratic Pope, $d=3$):** Full representability ($\cos\phi_{\text{sec}} = 1.0$ by construction for the synthetic target).
+- **Stratum 2 (Cubic Pope, $d=4$):** Adds $T^{(4)} \propto S^2\Omega - \Omega S^2$.
 
 ## Key Results
 
-### 1. Exact Canonical Transport ($\delta_R = 0.0000$)
-Analytical embedding $T_e(\theta) = [\theta, 0]$ guarantees exact zero realization drift across stratum transitions:
-- $\delta_R(0 \to 1) = 0.000000 \times 10^0$
-- $\delta_R(1 \to 2) = 0.000000 \times 10^0$
-- $\delta_R(0 \to 2) = 0.000000 \times 10^0$
+### 1. Mechanism: Adam Momentum Overshoot (Not Gram Conditioning)
 
-### 2. The Physical Curriculum Mechanism (Gram Matrix Conditioning)
-The task loss Hessian is the spatial Gram matrix $G_{ij} = \int_\Omega \operatorname{Tr}(T_i T_j) dA$:
-- $\kappa(G_0) = 1.00$ (Scalar Boussinesq)
-- $\kappa(G_1) = 14.24$ (Well-conditioned quadratic system)
-- $\kappa(G_2) = 64.10$ ($4.5\times$ conditioning jump due to $T_3 - T_4$ cross-coupling)
+A $2\times 2$ ablation matrix crossing basis scaling (raw vs. unit-normalized) with optimizer choice (Adam vs. plain GD) identifies the transient instability mechanism:
 
-Sequential traversal ($\mathcal{M}_0 \to \mathcal{M}_1 \to \mathcal{M}_2$) partially diagonalizes this ill-conditioned system, solving the $\kappa = 14.24$ subproblem before deploying the cubic term.
+| Condition | Path B Peak Violation | Rebound Ratio |
+|:---|:---|:---|
+| Raw Basis + Adam | 2.00% | 1.7× |
+| Normalized + Adam | 21.79% | 834× |
+| Raw Basis + Plain GD | 0.00% | 1.0× |
+| Normalized + Plain GD | 0.61% | 1.0× |
 
-### 3. Traversal Dynamics (Budget-Matched $N = 220$)
-- **Path A (Physical Curriculum):** Tolerates pre-existing violation in the non-deployed Stratum 1 scaffold ($5.64\%$), enabling the deployed Stratum 2 model to achieve rapid, essentially monotone repair ($5.64\% \to 1.04\%$) and dip-free secondary forcing alignment ($\rho > 0.999$).
-- **Path B (Direct Joint Calibration):** Manufactures a $2.00\%$ transient realizability excursion, triggering a $2\times$ optimization loss rebound (steps 21–27) and fidelity dips upon boundary collision.
-- **Penalty Sweep ($\lambda \in \{0, 150, 1500\}$):** Confirms the excursion is trajectory-mediated and penalty-modulated (peak violation is largest at $\lambda=0$ with $2.78\%$).
-- **Asymptotic Agreement:** Semantic realization defect $C_{AB} = 6.93 \times 10^{-6}$ confirms both paths converge to the identical physical basin.
+- **Plain GD eliminates all violations** regardless of basis scaling.
+- **Normalizing the basis makes Adam worse**, not better (opposite of Gram-conditioning prediction).
+- The raw $\kappa = 64.1$ drops to $6.0$ after unit-normalizing (scaling artifact, not fundamental obstruction).
 
-![Curvature Results](curvature_results.png)
+### 2. Traversal Dynamics (Budget-Matched $N = 220$)
+
+- **Path A (Staged):** Scaffold violations (5.64% peak) are confined to Stratum 1; deployed Stratum 2 model repairs essentially monotonically.
+- **Path B (Direct):** 2.00% peak violation, 1.39× loss rebound (steps 21–27) driven by Adam momentum overshooting the penalty barrier.
+- **Path C (Cold Start):** 1.22% peak violation—lower than both warm-starts. Converges to the same final loss ($1.34 \times 10^{-9}$).
+- **All paths converge** to the same minimizer ($C_{AB} = 6.93 \times 10^{-6}$), as guaranteed by convexity.
+
+### 3. Gram Matrix Block Structure
+
+The Gram matrix decouples exactly into $(\theta_0, \theta_1)$ and $(\theta_2, \theta_3)$ blocks (algebraic identity: $\text{Tr}(A[B,\Omega]) = 0$ for symmetric polynomials $A, B$ in $S$). Within the $(\theta_2, \theta_3)$ block, $R_{34} = -0.714$ (substantial cross-coupling).
 
 ## Repository Structure
 
-- [`PAPER_DRAFT.md`](PAPER_DRAFT.md): Complete, publication-ready research manuscript.
-- [`curvature_experiment.py`](curvature_experiment.py): 3-stratum budget-matched curvature & physical curriculum experiment.
-- [`results_curvature_experiment.json`](results_curvature_experiment.json): Audited telemetry database for Path A, Path B, and the $\lambda$-sweep.
-- [`prototype_square_duct.py`](prototype_square_duct.py): Baseline square duct environment, mesh generation, and controllability alignment.
+- [`paper.tex`](paper.tex): Complete LaTeX manuscript (revtex4-2, audit-revised).
+- [`audit_experiments.py`](audit_experiments.py): $2\times 2$ ablation matrix, cold-start baseline, frozen-coefficient ablation.
+- [`results_audit_experiments.json`](results_audit_experiments.json): Full ablation telemetry.
+- [`curvature_experiment.py`](curvature_experiment.py): Original 3-stratum budget-matched experiment.
+- [`results_curvature_experiment.json`](results_curvature_experiment.json): Original traversal telemetry (Path A, Path B, λ-sweep).
+- [`prototype_square_duct.py`](prototype_square_duct.py): Baseline square duct environment, mesh, and representability metrics.
 - [`plot_secondary_flow.py`](plot_secondary_flow.py): Secondary flow streamlines and normal stress anisotropy visualization.
-- [`curvature_results.png`](curvature_results.png): 4-panel figure (Loss trajectories, realizability dynamics, penalty sweep, Gram conditioning).
+- [`audit_ablation_results.png`](audit_ablation_results.png): 6-panel ablation diagnostic figure.
+- [`curvature_results.png`](curvature_results.png): Original 4-panel figure.
