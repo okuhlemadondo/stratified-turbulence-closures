@@ -1,0 +1,378 @@
+{
+  "grid_ny": {
+    "value": 48,
+    "formatted": "48",
+    "source_file": "src/prototype_square_duct.py",
+    "description": "Cross-sectional grid points in y-direction"
+  },
+  "grid_nz": {
+    "value": 48,
+    "formatted": "48",
+    "source_file": "src/prototype_square_duct.py",
+    "description": "Cross-sectional grid points in z-direction"
+  },
+  "grid_total_cells": {
+    "value": 2304,
+    "formatted": "2304",
+    "source_file": "src/prototype_square_duct.py",
+    "description": "Total cells in quarter-duct domain (48 x 48)"
+  },
+  "total_optimization_steps": {
+    "value": 220,
+    "formatted": "220",
+    "source_file": "src/curvature_experiment.py",
+    "description": "Total gradient steps per path"
+  },
+  "realizability_penalty_lambda": {
+    "value": 150.0,
+    "formatted": "150.0",
+    "source_file": "src/curvature_experiment.py",
+    "description": "Penalty multiplier lambda for negative eigenvalues"
+  },
+  "G_11": {
+    "value": 0.00013654166163840518,
+    "formatted": "1.365417e-04",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.G_full[0][0]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Gram matrix entry G_11 = ||T^(1)||^2"
+  },
+  "G_22": {
+    "value": 9.589409025169011e-06,
+    "formatted": "9.589409e-06",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.G_full[1][1]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Gram matrix entry G_22 = ||T^(2)||^2"
+  },
+  "G_33": {
+    "value": 0.00011507290564772053,
+    "formatted": "1.150729e-04",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.G_full[2][2]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Gram matrix entry G_33 = ||T^(3)||^2"
+  },
+  "G_44": {
+    "value": 4.4306737667840515e-06,
+    "formatted": "4.430674e-06",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.G_full[3][3]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Gram matrix entry G_44 = ||T^(4)||^2"
+  },
+  "G_34": {
+    "value": -1.6119168124500733e-05,
+    "formatted": "-1.611917e-05",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.G_full[2][3]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Gram matrix entry G_34 = <T^(3), T^(4)>"
+  },
+  "R_34": {
+    "value": -0.7138733977675286,
+    "formatted": "-0.7139",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.R_correlation[2][3]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Normalized cross-correlation between T^(3) and T^(4)"
+  },
+  "kappa_full": {
+    "value": 64.099575423486,
+    "formatted": "64.10",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.kappa_full",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Condition number of full 4x4 Gram matrix"
+  },
+  "kappa_block_01": {
+    "value": 14.238798934545992,
+    "formatted": "14.24",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.kappa_block_01",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Condition number of 3x3 Stratum-1 Gram block"
+  },
+  "kappa_unit_normalized": {
+    "value": 5.989912802218393,
+    "formatted": "5.99",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.kappa_unit_normalized",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Condition number of unit-normalized 4x4 Gram matrix"
+  },
+  "condition_ratio_R34": {
+    "value": 5.989912802218386,
+    "formatted": "5.99",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.R_correlation[2][3]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Condition number of isolated 2x2 normalized cross-coupling block (1+|R34|)/(1-|R34|)"
+  },
+  "scale_disparity_ratio": {
+    "value": 30.817358448286807,
+    "formatted": "30.82",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "gram_diagnostics.L2_norms",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Scale disparity ratio (||T^(1)|| / ||T^(4)||)^2"
+  },
+  "tau_ref_violation_pct": {
+    "value": 1.5625,
+    "formatted": "1.56%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "reporting.tau_ref_violation",
+    "generating_script": "src/round2_controls.py",
+    "description": "Realizability violation fraction of reference field tau_ref"
+  },
+  "tau_ref_min_eigenvalue": {
+    "value": -5.0954485258619203e-05,
+    "formatted": "-5.095449e-05",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "reporting.tau_ref_min_eigenvalue",
+    "generating_script": "src/round2_controls.py",
+    "description": "Minimum eigenvalue of reference field tau_ref across domain"
+  },
+  "path_A_hop_delta_R": {
+    "value": 0.0,
+    "formatted": "0.00e+00",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "reporting.delta_R_exact",
+    "generating_script": "src/round2_controls.py",
+    "description": "Exact realizability drift across Path A hops"
+  },
+  "path_A_scaffold_peak_viol": {
+    "value": 6.076388888888884,
+    "formatted": "6.08%",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_A.viol[0..99]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Peak realizability violation of Path A during Stratum-1 scaffold phase (step 38)"
+  },
+  "path_A_step99_loss": {
+    "value": 4.729754290568949e-09,
+    "formatted": "4.7298e-09",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_A.loss[99]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path A loss at step 99 (100th Stratum-1 gradient step)"
+  },
+  "path_A_step99_viol": {
+    "value": 5.642361111111116,
+    "formatted": "5.64%",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_A.viol[99]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path A violation at step 99"
+  },
+  "path_A_step100_viol": {
+    "value": 5.642361111111116,
+    "formatted": "5.64%",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_A.viol[100]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path A violation at step 100 (inherited into Stratum 2 before gradient descent)"
+  },
+  "path_A_step101_viol": {
+    "value": 5.902777777777779,
+    "formatted": "5.90%",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_A.viol[101]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path A deployed peak violation at step 101 (first Stratum-2 gradient step)"
+  },
+  "path_A_final_loss": {
+    "value": 1.3411836433828496e-09,
+    "formatted": "1.3412e-09",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_A.loss[-1]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path A final calibrated loss at step 220"
+  },
+  "path_A_final_viol": {
+    "value": 1.041666666666663,
+    "formatted": "1.04%",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_A.viol[-1]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path A final violation at step 220"
+  },
+  "path_B_peak_viol": {
+    "value": 1.996527777777779,
+    "formatted": "2.00%",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_B.viol",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path B peak realizability violation (step 25)"
+  },
+  "path_B_rebound_ratio": {
+    "value": 1.6831348440853116,
+    "formatted": "1.68x",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_B.loss[28]/loss[21]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path B loss rebound ratio from step 21 (2.62e-9) to step 28 (4.40e-9)"
+  },
+  "path_B_final_loss": {
+    "value": 1.3411824056649643e-09,
+    "formatted": "1.3412e-09",
+    "source_file": "data/results_curvature_experiment.json",
+    "json_path": "history_B.loss[-1]",
+    "generating_script": "src/curvature_experiment.py",
+    "description": "Path B final calibrated loss at step 220"
+  },
+  "path_C_peak_viol": {
+    "value": 1.215277777777779,
+    "formatted": "1.22%",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "experiments.cold_start.path_C.viol",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Path C (cold start) peak realizability violation (step 28)"
+  },
+  "path_C_final_loss": {
+    "value": 1.341182471196244e-09,
+    "formatted": "1.3412e-09",
+    "source_file": "data/results_audit_experiments.json",
+    "json_path": "experiments.cold_start.path_C.loss[-1]",
+    "generating_script": "src/audit_experiments.py",
+    "description": "Path C final calibrated loss at step 220"
+  },
+  "steps_to_tol_14_path_A": {
+    "value": 124,
+    "formatted": "124",
+    "source_file": "data/results_curvature_experiment.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Steps for Path A to reach L < 1.4e-9 (100 in S1 + 23 in S2)"
+  },
+  "steps_to_tol_14_path_B": {
+    "value": 60,
+    "formatted": "60",
+    "source_file": "data/results_curvature_experiment.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Steps for Path B to reach L < 1.4e-9"
+  },
+  "steps_to_tol_14_path_C": {
+    "value": 102,
+    "formatted": "102",
+    "source_file": "data/results_audit_experiments.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Steps for Path C to reach L < 1.4e-9"
+  },
+  "steps_to_tol_1pct_path_A": {
+    "value": 127,
+    "formatted": "127",
+    "source_file": "data/results_curvature_experiment.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Steps for Path A to reach L <= 1.3546e-9 (1% above final loss)"
+  },
+  "steps_to_tol_1pct_path_B": {
+    "value": 90,
+    "formatted": "90",
+    "source_file": "data/results_curvature_experiment.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Steps for Path B to reach L <= 1.3546e-9 (1% above final loss)"
+  },
+  "steps_to_tol_1pct_path_C": {
+    "value": 112,
+    "formatted": "112",
+    "source_file": "data/results_audit_experiments.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Steps for Path C to reach L <= 1.3546e-9 (1% above final loss)"
+  },
+  "control_B_restart_step100_post_peak": {
+    "value": 1.215277777777779,
+    "formatted": "1.22%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_1_B_restart.post_restart.viol",
+    "generating_script": "src/round2_controls.py",
+    "description": "Path B-restart at step 100 post-restart peak violation"
+  },
+  "control_B_restart_step18_post_peak": {
+    "value": 1.736111111111116,
+    "formatted": "1.74%",
+    "source_file": "data/results_round3_investigations.json",
+    "json_path": "B2_matched_restart_step18.post_restart_peak_viol",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Path B-restart at step 18 (matched loss) post-restart peak violation"
+  },
+  "control_B_restart_step18_rebound": {
+    "value": 3.120321230455407,
+    "formatted": "3.12x",
+    "source_file": "data/results_round3_investigations.json",
+    "json_path": "B2_matched_restart_step18.rebound_ratio",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Path B-restart at step 18 post-restart loss rebound ratio"
+  },
+  "control_A_carry_deployed_max_viol": {
+    "value": 5.642361111111116,
+    "formatted": "5.64%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_2_A_carry.deployed_carry.viol",
+    "generating_script": "src/round2_controls.py",
+    "description": "Path A carrying momentum across hop deployed phase max violation"
+  },
+  "control_beta1_zero_path_B_peak_viol": {
+    "value": 1.302083333333337,
+    "formatted": "1.30%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_3_no_momentum.path_B.viol",
+    "generating_script": "src/round2_controls.py",
+    "description": "Path B with Adam beta1=0 peak realizability violation"
+  },
+  "control_beta1_zero_path_B_final_loss": {
+    "value": 1.435955964783335e-09,
+    "formatted": "1.4360e-09",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_3_no_momentum.path_B.loss[-1]",
+    "generating_script": "src/round2_controls.py",
+    "description": "Path B with Adam beta1=0 loss at step 220"
+  },
+  "control_conv_gd_path_B_peak_viol": {
+    "value": 6.25,
+    "formatted": "6.25%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_4_convergent_gd.path_B.viol",
+    "generating_script": "src/round2_controls.py",
+    "description": "Path B with Plain GD (alpha = 7323.77) peak violation"
+  },
+  "control_conv_gd_path_A_peak_viol": {
+    "value": 6.163194444444442,
+    "formatted": "6.16%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_4_convergent_gd.path_A.viol",
+    "generating_script": "src/round2_controls.py",
+    "description": "Path A with Plain GD (alpha = 7323.77) peak violation"
+  },
+  "control_rescaled_alpha_peak_viol": {
+    "value": 12.5,
+    "formatted": "12.50%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_5_rescaled_alpha.path_B.viol",
+    "generating_script": "src/round2_controls.py",
+    "description": "Path B with normalized basis and scalar rescaled alpha peak violation"
+  },
+  "control_per_coord_adam_peak_viol": {
+    "value": 1.996527777777779,
+    "formatted": "2.00%",
+    "source_file": "data/results_round3_investigations.json",
+    "json_path": "B6_per_coordinate_adam.peak_viol_norm_percoord",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Path B with normalized basis and per-coordinate Adam peak violation"
+  },
+  "param_distance_A_B": {
+    "value": 3.162355807659343e-05,
+    "formatted": "3.1624e-05",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "reporting.final_theta_A, final_theta_B",
+    "generating_script": "src/round2_controls.py",
+    "description": "L2 distance between final calibrated parameters of Path A and Path B"
+  },
+  "param_distance_A_c_true": {
+    "value": 0.020190860600984312,
+    "formatted": "2.0191e-02",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "reporting.final_theta_A, true_coefficients",
+    "generating_script": "src/round2_controls.py",
+    "description": "L2 distance between Path A calibrated parameters and ground truth coefficients"
+  }
+}

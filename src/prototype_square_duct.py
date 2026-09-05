@@ -151,11 +151,12 @@ class SquareDuctQuadrant:
         # Isotropic baseline: (2/3) k delta_ij
         tau_iso = (2.0/3.0) * self.k[:, :, None, None] * I3
         
-        # Deviatoric Reynolds stress ground truth
+        # 3. Reference Reynolds Stresses tau_ref
         tau_dev_true = c_mu_true * self.T1 + c1_true * self.T2 + c2_true * self.T3
         
         # Full Reynolds stress
-        self.tau_DNS = tau_iso + tau_dev_true
+        self.tau_ref = tau_iso + tau_dev_true
+        self.tau_DNS = self.tau_ref  # Alias for backwards compatibility
 
 # ==============================================================================
 # 2. Controllability Metric: cos θ_sec
@@ -167,12 +168,12 @@ def compute_controllability_alignment(mesh, basis_list):
     and the secondary-flow-driving stress component:
     tau_sec = diag(0, tau_yy - tau_zz, tau_zz - tau_yy) + tau_yz * (e_y x e_z + e_z x e_y)
     """
-    # Extract secondary driving stress components from tau_DNS
-    tau_yy = mesh.tau_DNS[:, :, 1, 1]
-    tau_zz = mesh.tau_DNS[:, :, 2, 2]
-    tau_yz = mesh.tau_DNS[:, :, 1, 2]
+    # Extract secondary driving stress components from tau_ref
+    tau_yy = mesh.tau_ref[:, :, 1, 1]
+    tau_zz = mesh.tau_ref[:, :, 2, 2]
+    tau_yz = mesh.tau_ref[:, :, 1, 2]
     
-    tau_sec = np.zeros_like(mesh.tau_DNS)
+    tau_sec = np.zeros_like(mesh.tau_ref)
     tau_sec[:, :, 1, 1] = 0.5 * (tau_yy - tau_zz)
     tau_sec[:, :, 2, 2] = -0.5 * (tau_yy - tau_zz)
     tau_sec[:, :, 1, 2] = tau_yz
@@ -266,7 +267,7 @@ class Stratum0_Linear:
         if theta is None:
             theta = self.theta
         tau_pred = self.predict(theta)
-        diff = tau_pred - self.mesh.tau_DNS
+        diff = tau_pred - self.mesh.tau_ref
         loss = 0.5 * np.sum(self.W * (diff**2))
         
         # d(diff)/d(c_mu) = T1
@@ -293,7 +294,7 @@ class Stratum1_Quadratic:
         if theta is None:
             theta = self.theta
         tau_pred = self.predict(theta)
-        diff = tau_pred - self.mesh.tau_DNS
+        diff = tau_pred - self.mesh.tau_ref
         loss = 0.5 * np.sum(self.W * (diff**2))
         
         g0 = np.sum(self.W * diff * self.mesh.T1)

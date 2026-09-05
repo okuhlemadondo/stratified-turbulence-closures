@@ -73,12 +73,12 @@ def plot_physics():
     # Panel 3: Normal Stress Anisotropy (tau_yy - tau_zz) driving the vortices
     # --------------------------------------------------------------------------
     ax3 = axes[2]
-    tau_aniso = mesh.tau_DNS[:, :, 1, 1] - mesh.tau_DNS[:, :, 2, 2]
+    tau_aniso = mesh.tau_ref[:, :, 1, 1] - mesh.tau_ref[:, :, 2, 2]
     max_val = np.max(np.abs(tau_aniso))
     cp3 = ax3.contourf(mesh.Z, mesh.Y, tau_aniso, levels=30, cmap='RdBu_r', 
                        vmin=-max_val, vmax=max_val)
     cbar3 = plt.colorbar(cp3, ax=ax3)
-    cbar3.set_label(r'$(\tau_{yy} - \tau_{zz})_{\rm DNS}$', fontsize=11, fontweight='bold')
+    cbar3.set_label(r'$(\tau_{yy} - \tau_{zz})_{\rm ref}$', fontsize=11, fontweight='bold')
     ax3.set_title(r'(c) Anisotropic Driver: $(\tau_{yy} - \tau_{zz})$' + '\n' + r'[Boussinesq $\equiv 0$ everywhere]', 
                   fontsize=11, fontweight='bold')
     ax3.set_xlabel('$z / h$', fontsize=11, fontweight='bold')

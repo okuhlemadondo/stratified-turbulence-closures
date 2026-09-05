@@ -90,7 +90,8 @@ class ExtendedDuctMesh(SquareDuctQuadrant):
                         self.c3_true * self.T4 + 
                         unmodeled_wall_stress)
         
-        self.tau_DNS = tau_iso + tau_dev_true
+        self.tau_ref = tau_iso + tau_dev_true
+        self.tau_DNS = self.tau_ref  # Alias for backwards compatibility
 
 # ==============================================================================
 # 2. Stratum Models with Realizability Penalty
@@ -110,7 +111,7 @@ class Stratum0:
     def loss_and_grad(self, theta=None):
         if theta is None: theta = self.theta
         tau = self.predict(theta)
-        diff = tau - self.mesh.tau_DNS
+        diff = tau - self.mesh.tau_ref
         loss = 0.5 * np.sum(self.W * (diff**2))
         grad = np.array([np.sum(self.W * diff * self.mesh.T1)])
         return loss, grad
@@ -132,7 +133,7 @@ class Stratum1:
     def loss_and_grad(self, theta=None):
         if theta is None: theta = self.theta
         tau = self.predict(theta)
-        diff = tau - self.mesh.tau_DNS
+        diff = tau - self.mesh.tau_ref
         loss_task = 0.5 * np.sum(self.W * (diff**2))
         grad_task = np.array([np.sum(self.W * diff * self.basis[i]) for i in range(3)])
         
@@ -170,7 +171,7 @@ class Stratum2:
     def loss_and_grad(self, theta=None):
         if theta is None: theta = self.theta
         tau = self.predict(theta)
-        diff = tau - self.mesh.tau_DNS
+        diff = tau - self.mesh.tau_ref
         loss_task = 0.5 * np.sum(self.W * (diff**2))
         grad_task = np.array([np.sum(self.W * diff * self.basis[i]) for i in range(4)])
         
@@ -203,7 +204,7 @@ def run_experiment():
 
     mesh = ExtendedDuctMesh(h=1.0, Ny=48, Nz=48)
     W = mesh.W_grid[:, :, None, None]
-    norm_dns = np.sqrt(np.sum(W * (mesh.tau_DNS**2)))
+    norm_dns = np.sqrt(np.sum(W * (mesh.tau_ref**2)))
 
     # --------------------------------------------------------------------------
     # 1. Quantify Gram Matrix Conditioning (The Mechanism)
@@ -256,7 +257,7 @@ def run_experiment():
         d2_dy2_yz = np.gradient(d_dy_yz, mesh.y, axis=0)
         return d2_dydz + (d2_dz2_yz - d2_dy2_yz)
 
-    f_DNS = compute_f_sec(mesh.tau_DNS)
+    f_DNS = compute_f_sec(mesh.tau_ref)
     norm_f_DNS = np.sqrt(np.sum(mesh.W_grid * f_DNS**2))
 
     # Path A: 100 steps in Stratum 1 + 120 steps in Stratum 2 = 220 steps

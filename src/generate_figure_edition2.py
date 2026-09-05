@@ -81,8 +81,13 @@ ax.plot([v * 100 for v in hC['viol']], color=cC, lw=1.8, ls='--', label='Path C 
 ax.axvspan(0, 100, alpha=0.08, color=cA, label='Scaffold phase (Stratum 1)')
 ax.axvline(x=100, color='gray', ls=':', alpha=0.7, lw=1.0)
 
-ax.annotate('Deployed Stratum 2 inherits\n$5.64\\%$ violation at hop',
-            xy=(100, 5.64), xytext=(115, 4.5),
+ax.annotate('Scaffold peak $6.08\\%$\n(step 38)',
+            xy=(38, 6.08), xytext=(45, 6.3),
+            fontsize=8, color=cA,
+            arrowprops=dict(arrowstyle='->', color=cA, lw=0.8))
+
+ax.annotate('Deployed Stratum 2 inherits $5.64\\%$;\npeaks at $5.90\\%$ (step 101)\nvia Adam sign-step transient',
+            xy=(101, 5.90), xytext=(112, 4.3),
             fontsize=8, color=cA,
             arrowprops=dict(arrowstyle='->', color=cA, lw=0.8))
 
@@ -101,7 +106,7 @@ ax.set_ylabel('Realizability violation fraction (%)', fontsize=9.5)
 ax.set_title('(b) Realizability dynamics: scaffold inheritance vs direct excursions', fontsize=10.5, fontweight='bold')
 ax.legend(fontsize=8.5, loc='upper right')
 ax.set_xlim(0, 220)
-ax.set_ylim(-0.2, 7.0)
+ax.set_ylim(-0.2, 7.2)
 ax.grid(True, ls=':', alpha=0.4)
 
 # --------------------------------------------------------------------------
@@ -112,26 +117,37 @@ conditions = [
     'Raw Adam\n(baseline)',
     'Raw Adam\n($\\beta_1 = 0$)',
     'Raw GD\n(conv. $\\alpha$)',
+    'Norm. Adam\n(per-coord)',
     'Norm. Adam\n($\\alpha$ resc.)',
     'Norm. Adam\n(fixed $\\alpha$)',
 ]
+
+# Check if round3 investigations json exists for per-coord adam
+p_inv = DATA_DIR / 'results_round3_investigations.json'
+if p_inv.exists():
+    with open(p_inv) as f:
+        inv_data = json.load(f)
+    v_norm_pc = inv_data['B6_per_coordinate_adam']['peak_viol_norm_percoord']
+else:
+    v_norm_pc = 2.00
 
 peak_viols = [
     audit['experiments']['raw_adam']['path_B']['max_viol'] * 100,
     max(r2['control_3_no_momentum']['path_B']['viol']) * 100,
     max(r2['control_4_convergent_gd']['path_B']['viol']) * 100,
+    v_norm_pc,
     max(r2['control_5_rescaled_alpha']['path_B']['viol']) * 100,
     audit['experiments']['norm_adam']['path_B']['max_viol'] * 100,
 ]
 
-bar_colors = ['#E08214', '#FDB863', '#542788', '#8073AC', '#B35806']
+bar_colors = ['#E08214', '#FDB863', '#542788', '#2CA02C', '#8073AC', '#B35806']
 
-bars = ax.bar(range(5), peak_viols, color=bar_colors, edgecolor='black', linewidth=0.6, width=0.65)
+bars = ax.bar(range(6), peak_viols, color=bar_colors, edgecolor='black', linewidth=0.6, width=0.60)
 for i, v in enumerate(peak_viols):
-    ax.text(i, v + 0.4, f'{v:.2f}%', ha='center', fontsize=8.5, fontweight='bold')
+    ax.text(i, v + 0.4, f'{v:.2f}%', ha='center', fontsize=8.0, fontweight='bold')
 
-ax.set_xticks(range(5))
-ax.set_xticklabels(conditions, fontsize=8.5)
+ax.set_xticks(range(6))
+ax.set_xticklabels(conditions, fontsize=8.0)
 ax.set_ylabel('Path B peak realizability violation (%)', fontsize=9.5)
 ax.set_title('(c) Mechanism ablation: optimizer, momentum, and basis scaling', fontsize=10.5, fontweight='bold')
 ax.set_ylim(0, 25.0)

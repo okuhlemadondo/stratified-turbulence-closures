@@ -128,7 +128,7 @@ def main():
 
     mesh = ExtendedDuctMesh(h=1.0, Ny=48, Nz=48)
     W = mesh.W_grid[:, :, None, None]
-    norm_ref = np.sqrt(np.sum(W * (mesh.tau_DNS ** 2)))
+    norm_ref = np.sqrt(np.sum(W * (mesh.tau_ref ** 2)))
 
     raw_basis = [mesh.T1, mesh.T2, mesh.T3, mesh.T4]
 
@@ -187,7 +187,7 @@ def main():
     print("=" * 80)
 
     _, theta_0_star = run_path(
-        mesh, [mesh.T1], mesh.tau_DNS, W, norm_ref,
+        mesh, [mesh.T1], mesh.tau_ref, W, norm_ref,
         theta_init=np.array([0.01]),
         n_steps=120, lambda_realiz=0.0,
         optimizer_cls=AdamOptimizer, lr=2e-3
@@ -242,7 +242,7 @@ def main():
         # --- Path A: Sequential (100 in Stratum 1, 120 in Stratum 2) ---
         theta_init_s1 = np.array([t0, 0.0, 0.0])
         hist_A1, theta_1_star = run_path(
-            mesh, basis[:3], mesh.tau_DNS, W, norm_ref,
+            mesh, basis[:3], mesh.tau_ref, W, norm_ref,
             theta_init=theta_init_s1,
             n_steps=N_phase1, lambda_realiz=lam,
             optimizer_cls=opt_cls, lr=2e-3
@@ -250,7 +250,7 @@ def main():
 
         theta_init_s2a = np.array([theta_1_star[0], theta_1_star[1], theta_1_star[2], 0.0])
         hist_A2, theta_2A_star = run_path(
-            mesh, basis, mesh.tau_DNS, W, norm_ref,
+            mesh, basis, mesh.tau_ref, W, norm_ref,
             theta_init=theta_init_s2a,
             n_steps=N_phase2, lambda_realiz=lam,
             optimizer_cls=opt_cls, lr=2e-3
@@ -264,7 +264,7 @@ def main():
         # --- Path B: Direct (220 in Stratum 2) ---
         theta_init_s2b = np.array([t0, 0.0, 0.0, 0.0])
         hist_B, theta_2B_star = run_path(
-            mesh, basis, mesh.tau_DNS, W, norm_ref,
+            mesh, basis, mesh.tau_ref, W, norm_ref,
             theta_init=theta_init_s2b,
             n_steps=N_total, lambda_realiz=lam,
             optimizer_cls=opt_cls, lr=2e-3
@@ -307,7 +307,7 @@ def main():
     print(f"{'=' * 80}")
 
     hist_C, theta_C_star = run_path(
-        mesh, raw_basis, mesh.tau_DNS, W, norm_ref,
+        mesh, raw_basis, mesh.tau_ref, W, norm_ref,
         theta_init=np.array([0.0, 0.0, 0.0, 0.0]),
         n_steps=N_total, lambda_realiz=lam,
         optimizer_cls=AdamOptimizer, lr=2e-3
@@ -333,7 +333,7 @@ def main():
     # Phase 1: same as raw_adam Path A phase 1
     theta_init_s1 = np.array([theta_0_star[0], 0.0, 0.0])
     hist_D1, theta_1_star_D = run_path(
-        mesh, raw_basis[:3], mesh.tau_DNS, W, norm_ref,
+        mesh, raw_basis[:3], mesh.tau_ref, W, norm_ref,
         theta_init=theta_init_s1,
         n_steps=N_phase1, lambda_realiz=lam,
         optimizer_cls=AdamOptimizer, lr=2e-3
@@ -343,7 +343,7 @@ def main():
     theta_init_s2d = np.array([theta_1_star_D[0], theta_1_star_D[1], theta_1_star_D[2], 0.0])
     freeze = np.array([True, True, True, False])
     hist_D2, theta_D_star = run_path(
-        mesh, raw_basis, mesh.tau_DNS, W, norm_ref,
+        mesh, raw_basis, mesh.tau_ref, W, norm_ref,
         theta_init=theta_init_s2d,
         n_steps=N_phase2, lambda_realiz=lam,
         optimizer_cls=AdamOptimizer, lr=2e-3,
