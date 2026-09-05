@@ -199,7 +199,7 @@ numbers = {
         "source_file": "data/results_curvature_experiment.json",
         "json_path": "history_A.viol[0..99]",
         "generating_script": "src/curvature_experiment.py",
-        "description": "Peak realizability violation of Path A during Stratum-1 scaffold phase (step 38)"
+        "description": "Peak realizability violation of Path A during Stratum-1 scaffold phase (step 28)"
     },
     "path_A_step99_loss": {
         "value": float(orig["history_A"]["loss"][99]),
@@ -279,7 +279,7 @@ numbers = {
         "source_file": "data/results_audit_experiments.json",
         "json_path": "experiments.cold_start.path_C.viol",
         "generating_script": "src/audit_experiments.py",
-        "description": "Path C (cold start) peak realizability violation (step 28)"
+        "description": "Path C (cold start) peak realizability violation (step 30)"
     },
     "path_C_final_loss": {
         "value": float(audit["experiments"]["cold_start"]["path_C"]["loss"][-1]),
@@ -346,14 +346,6 @@ numbers = {
         "json_path": "B2_matched_restart_step18.post_restart_peak_viol",
         "generating_script": "src/round3_investigations.py",
         "description": "Path B-restart at step 18 (matched loss) post-restart peak violation"
-    },
-    "control_B_restart_step18_rebound": {
-        "value": float(r3["B2_matched_restart_step18"]["rebound_ratio"]),
-        "formatted": f"{r3['B2_matched_restart_step18']['rebound_ratio']:.2f}x",
-        "source_file": "data/results_round3_investigations.json",
-        "json_path": "B2_matched_restart_step18.rebound_ratio",
-        "generating_script": "src/round3_investigations.py",
-        "description": "Path B-restart at step 18 post-restart loss rebound ratio"
     },
     "control_A_carry_deployed_max_viol": {
         "value": float(max(r2["control_2_A_carry"]["deployed_carry"]["viol"]) * 100),

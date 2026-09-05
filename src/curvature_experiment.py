@@ -338,14 +338,18 @@ def run_experiment():
         s1 = Stratum1(mesh, lambda_realiz=l_val)
         s1.theta = np.array([theta_0_star[0], 0.0, 0.0])
         opt1 = AdamOptimizer(lr=2e-3)
+        viol_s1 = []
         for _ in range(100):
+            viol_s1.append(float(1.0 - check_realizability(mesh, s1.predict())))
             l, g = s1.loss_and_grad()
             s1.theta = opt1.step(s1.theta, g)
             
         s2a = Stratum2(mesh, lambda_realiz=l_val)
         s2a.theta = np.array([s1.theta[0], s1.theta[1], s1.theta[2], 0.0])
         opt2a = AdamOptimizer(lr=2e-3)
+        viol_s2a = []
         for _ in range(120):
+            viol_s2a.append(float(1.0 - check_realizability(mesh, s2a.predict())))
             l, g = s2a.loss_and_grad()
             s2a.theta = opt2a.step(s2a.theta, g)
             
@@ -358,6 +362,16 @@ def run_experiment():
             l, g = s2b.loss_and_grad()
             viol_b_sweep.append(float(1.0 - check_realizability(mesh, s2b.predict())))
             s2b.theta = opt2b.step(s2b.theta, g)
+
+        # Path C (220 steps, cold start)
+        s2c = Stratum2(mesh, lambda_realiz=l_val)
+        s2c.theta = np.array([0.0, 0.0, 0.0, 0.0])
+        opt2c = AdamOptimizer(lr=2e-3)
+        viol_c_sweep = []
+        for _ in range(220):
+            l, g = s2c.loss_and_grad()
+            viol_c_sweep.append(float(1.0 - check_realizability(mesh, s2c.predict())))
+            s2c.theta = opt2c.step(s2c.theta, g)
             
         t_2a = s2a.predict()
         t_2b = s2b.predict()
@@ -367,6 +381,13 @@ def run_experiment():
         lambda_sweep[str(l_val)] = {
             "peak_viol_B": float(max(viol_b_sweep)),
             "end_viol_B": float(viol_b_sweep[-1]),
+            "A_scaf_peak_viol": float(max(viol_s1)),
+            "A_depl_peak_viol": float(max(viol_s2a)),
+            "A_end_viol": float(viol_s2a[-1]),
+            "B_peak_viol": float(max(viol_b_sweep)),
+            "B_end_viol": float(viol_b_sweep[-1]),
+            "C_peak_viol": float(max(viol_c_sweep)),
+            "C_end_viol": float(viol_c_sweep[-1]),
             "c_defect": c_defect,
             "param_dist": p_dist,
             "theta_A": s2a.theta.tolist(),

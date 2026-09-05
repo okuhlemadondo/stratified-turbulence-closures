@@ -10,7 +10,7 @@
 
 In a convex, constant-coefficient, *a priori* calibration of a four-term Pope tensor basis on a synthetic square duct benchmark ($\text{Re}_\tau = 300$), we investigate whether staging calibration through intermediate subspaces offers measurable advantages over direct joint calibration or an un-staged cold start. Because zero-padding preserves predictions identically ($\delta_R \equiv 0$), the deployed Stratum 2 model in the staged protocol inherits the full $5.64\%$ realizability violation of the intermediate scaffold at deployment (peaking at $5.90\%$ during repair due to Adam's cold-update sign-step transient), whereas direct calibration produces a transient excursion peaking at $2.00\%$ violation (accompanied by a $1.68\times$ loss rebound), and an un-staged cold start ($\theta = \mathbf{0}$, Path C) reaches the identical minimizer with a peak violation of only $1.22\%$.
 
-Through an extensive suite of pre-registered controls, we isolate the physical and numerical mechanisms governing these dynamics. In a matched-loss restart control at step 18 (where Path B's loss first drops below Path A's hop loss $4.73 \times 10^{-9}$ to $4.34 \times 10^{-9}$, preceded by $5.84 \times 10^{-9}$ at step 17), resetting momentum yields a post-restart peak violation of $1.74\%$ with a $3.12\times$ loss rebound (**Branch ii occurred**), confirming that travel distance across the ill-conditioned landscape is the dominant driver of realizability excursions. The post-restart rebound is exacerbated by Adam's cold-update transient ($v = 0 \implies |\Delta\theta_1| = \alpha$), rather than mitigated by it. Comparing Adam with and without first-moment momentum ($\beta_1 = 0$) at a matched convergence rate ($76$ steps to $L < 1.4 \times 10^{-9}$) isolates a $1.27\times$ momentum amplification ($1.65\%$ vs. $1.30\%$), while a step-size sweep shows that traversal speed strongly modulates excursion magnitude. Convergent plain gradient descent traverses unrealizable states at $6.25\%$ (Path B) and $6.16\%$ (Path A). Furthermore, we prove that per-coordinate Adam on a unit-normalized basis preserves exact scale invariance to machine precision (relative loss discrepancy $< 2.1 \times 10^{-15}$, parameter difference $< 3.0 \times 10^{-17}$, peak violation $2.00\%$).
+Through an extensive suite of pre-registered controls, we isolate the physical and numerical mechanisms governing these dynamics. In a matched-loss restart control at step 18 (where Path B's loss first drops below Path A's hop loss $4.73 \times 10^{-9}$ to $4.34 \times 10^{-9}$, preceded by $5.84 \times 10^{-9}$ at step 17), resetting momentum yields a post-restart peak violation of $1.74\%$ (**Branch ii occurred**), confirming that travel distance across the ill-conditioned landscape is the dominant driver of realizability excursions, while continuous momentum contributes an incremental $+0.26\%$ amplification ($1.74\% \to 2.00\%$). Comparing Adam with and without first-moment momentum ($\beta_1 = 0$) at a matched convergence rate ($76$ steps to $L < 1.4 \times 10^{-9}$) isolates a $1.27\times$ momentum amplification ($1.65\%$ vs. $1.30\%$), while a step-size sweep shows that traversal speed strongly modulates excursion magnitude. Convergent plain gradient descent traverses unrealizable states at $6.25\%$ (Path B) and $6.16\%$ (Path A). Furthermore, we prove that per-coordinate Adam on a unit-normalized basis preserves exact scale invariance to machine precision (relative loss discrepancy $< 2.1 \times 10^{-15}$, parameter difference $< 3.0 \times 10^{-17}$, peak violation $2.00\%$).
 
 In this convex setting, direct warm-starting accelerates convergence (reaching tolerance in $59$ steps vs. $101$ for cold start), but incurs a higher peak violation ($2.00\%$ vs. $1.22\%$). Staged warm-starting (Path A) is both slower ($123$ total steps) and accumulates higher deployed violation ($5.90\%$), directly inheriting the intermediate scaffold's boundary excursion. Un-staged cold start is therefore optimal for realizability preservation, while direct warm-starting minimizes step count. We formalize this configuration space as a **Stratified Design Atlas** and delineate the necessary conditions—non-convex losses, coupled Navier–Stokes evaluation, and non-nested basis edits—under which geometric transport and path-dependence become non-trivial.
 
@@ -118,27 +118,27 @@ Shared      Warm-start origin                      0    1.2264e-07       0.00%  
 Path A      Scaffold                              50    5.0321e-09       5.12%       +0.293           20.57%
             Scaffold end (100th S1 step)          99    4.7298e-09       5.64%       +0.294           20.36%
             Embedding (δ_R ≡ 0, pre-grad)        100    4.7300e-09       5.64%       +0.294           20.44%
-            Deployed 1st step (peak)             101    4.5412e-09       5.90%       +0.368           12.41%
+            Deployed 1st step (peak)             101    4.5361e-09       5.90%       +0.368           12.41%
             Deployed repair                      105    3.3522e-09       3.12%       +0.654            8.12%
             Deployed repair                      120    1.4889e-09       1.22%       +0.988            2.30%
-            Tol. reached (L < 1.4e-9)            123    1.3995e-09       1.22%       +0.993            2.13%
-            1% above final (L ≤ 1.355e-9)        126    1.3541e-09       1.13%       +0.997            1.82%
+            Tol. reached (L < 1.4e-9)            123    1.3851e-09       1.30%       +0.994            1.78%
+            1% above final (L ≤ 1.355e-9)        126    1.3472e-09       1.13%       +0.998            1.65%
             Final                                219    1.3412e-09       1.04%       +0.999            1.65%
 -------------------------------------------------------------------------------------------------------------------
 Path B      Rapid descent                          1    1.1058e-07       0.00%       +0.941           10.11%
             Excursion onset                       20    2.7765e-09       1.56%       +0.955            2.91%
-            Excursion trough                      21    2.6174e-09       1.65%       +0.958            2.86%
+            Excursion trough                      21    2.6159e-09       1.65%       +0.957            2.82%
             Peak violation                        25    3.8512e-09       2.00%       +0.965            2.73%
-            Rebound peak (1.68×)                  28    4.3980e-09       1.91%       +0.970            2.60%
-            Tol. reached (L < 1.4e-9)             59    1.3988e-09       1.04%       +0.998            1.82%
-            1% above final (L ≤ 1.355e-9)         89    1.3542e-09       1.04%       +0.998            1.74%
+            Rebound peak (1.68×)                  28    4.4029e-09       2.00%       +0.974            2.65%
+            Tol. reached (L < 1.4e-9)             59    1.3990e-09       1.22%       +0.998            1.78%
+            1% above final (L ≤ 1.355e-9)         89    1.3522e-09       1.13%       +0.998            1.74%
             Final                                219    1.3412e-09       1.04%       +0.999            1.69%
 -------------------------------------------------------------------------------------------------------------------
-Path C      Origin (θ = 0)                         0    6.1912e-07       0.00%       -0.157           29.38%
-            Peak violation                        28    6.7118e-08       1.22%       +0.920           12.45%
-            Tol. reached (L < 1.4e-9)            101    1.3994e-09       1.13%       +0.998            1.74%
-            1% above final (L ≤ 1.355e-9)        111    1.3544e-09       1.04%       +0.999            1.69%
-            Final                                219    1.3412e-09       1.04%       +0.999            1.69%
+Path C      Origin (θ = 0)                         0    6.7566e-07       0.00%        ---              ---
+            Peak violation                        30    8.5443e-08       1.22%        ---              ---
+            Tol. reached (L < 1.4e-9)            101    1.3963e-09       1.13%        ---              ---
+            1% above final (L ≤ 1.355e-9)        111    1.3528e-09       1.04%        ---              ---
+            Final                                219    1.3412e-09       1.04%        ---              ---
 ===================================================================================================================
 ```
 
@@ -175,7 +175,7 @@ Norm. Adam (fixed α = 2e-3)                   21.79%       834.0×         — 
 
 ### 5.2 Decisive Restart Controls
 
-* **Matched-Loss B-Restart (Step 18):** Restarting Adam on Path B at step 18 (where loss drops to $4.34 \times 10^{-9} < 4.73 \times 10^{-9}$, preceded by $5.84 \times 10^{-9}$ at step 17) yields a post-restart peak violation of **$1.74\%$** and an exacerbated **$3.12\times$** loss rebound ($2.62 \times 10^{-9} \to 8.17 \times 10^{-9}$, **Branch ii occurred**). Parameter travel distance dominates the excursion, while momentum adds $+0.26\%$. The increased rebound reflects Adam's post-restart cold update ($v = 0 \implies |\Delta\theta_1| = \alpha$).
+* **Matched-Loss B-Restart (Step 18):** Restarting Adam on Path B at step 18 (where loss drops to $4.34 \times 10^{-9} < 4.73 \times 10^{-9}$, preceded by $5.84 \times 10^{-9}$ at step 17) yields a post-restart peak violation of **$1.74\%$** at step 21 (climbing from $0.95\%$ at step 17, **Branch ii occurred**), while the loss continues its monotonic descent toward tolerance without an additional rebound. Parameter travel distance dominates the excursion, while momentum adds $+0.26\%$ ($1.74\% \to 2.00\%$), and the restart merely interrupted an in-progress boundary traversal rather than preventing one.
 * **A-Carry ($5.64\%$) vs. A-Fresh ($5.90\%$):** Momentum carry-over deploys at $5.64\%$ without rising. Fresh restart triggers an initial sign step update pushing violation to $5.90\%$ at step 101.
 
 ---

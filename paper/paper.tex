@@ -62,11 +62,10 @@ only $1.22\%$.
 Through an extensive suite of pre-registered controls, we isolate the physical
 and numerical mechanisms governing these dynamics. In a matched-loss restart control
 at step~18 (where Path~B's loss first drops below Path~A's hop loss $\num{4.73e-9}$
-to $\num{4.34e-9}$), resetting momentum yields a post-restart peak violation of
-$1.74\%$ with a $3.12\times$ loss rebound, confirming that travel distance across
-the ill-conditioned landscape is the dominant driver of realizability excursions.
-The post-restart rebound is exacerbated by Adam's cold-update transient
-($v = 0 \implies |\Delta\theta_1| = \alpha$), rather than mitigated by it.
+to $\num{4.34e-9}$, preceded by $\num{5.84e-9}$ at step~17), resetting momentum yields a post-restart peak violation of
+$1.74\%$, confirming that travel distance across
+the ill-conditioned landscape is the dominant driver of realizability excursions,
+while continuous momentum contributes an incremental $+0.26\%$ amplification ($1.74\% \to 2.00\%$).
 Comparing Adam with and without first-moment momentum ($\beta_1 = 0$) at a matched
 convergence rate ($76$ steps to $L < \num{1.4e-9}$) isolates a $1.27\times$
 momentum amplification ($1.65\%$ vs.\ $1.30\%$), while a systematic step-size sweep
@@ -567,7 +566,9 @@ Decomposing the global condition number $\kappa(G_2) = 64.10$:
   where Adam's cold-update sign-step transient produces the deployed peak violation of $5.90\%$.
   Steps to tolerance ($L < \num{1.4e-9}$): Path~A = 123 (100 in Stratum~1 + 23 in Stratum~2),
   Path~B = 59, Path~C = 101. Steps to within $1\%$ of final loss ($L \le \num{1.3546e-9}$):
-  Path~A = 126, Path~B = 89, Path~C = 111.}\label{tab:telemetry}
+  Path~A = 126, Path~B = 89, Path~C = 111. Secondary vorticity forcing correlation metrics
+  ($\rho$ and reversed fraction) were tracked along the warm-started and staged trajectories
+  (Paths~A and~B); Path~C focuses on the realizability-recovery trajectory and forcing columns are marked ---.}\label{tab:telemetry}
 \begin{ruledtabular}
 \begin{tabular}{llccccc}
   Protocol & Stage & Step & Loss $L(\theta)$ & Violation & Forcing $\rho$ & Reversed frac. \\
@@ -581,26 +582,26 @@ Decomposing the global condition number $\kappa(G_2) = 64.10$:
     & Deployed 1st step (peak) & 101 & $\num{4.54e-9}$ & $5.90\%$ & $+0.368$ & $12.41\%$ \\
     & Deployed repair & 105 & $\num{3.35e-9}$ & $3.12\%$ & $+0.654$ & $8.12\%$ \\
     & Deployed repair & 120 & $\num{1.49e-9}$ & $1.22\%$ & $+0.988$ & $2.30\%$ \\
-    & Tol.\ reached ($L < \num{1.4e-9}$) & 123 & $\num{1.40e-9}$ & $1.22\%$ & $+0.993$ & $2.13\%$ \\
-    & $1\%$ above final ($L \le \num{1.355e-9}$) & 126 & $\num{1.35e-9}$ & $1.13\%$ & $+0.997$ & $1.82\%$ \\
+    & Tol.\ reached ($L < \num{1.4e-9}$) & 123 & $\num{1.39e-9}$ & $1.30\%$ & $+0.994$ & $1.78\%$ \\
+    & $1\%$ above final ($L \le \num{1.355e-9}$) & 126 & $\num{1.35e-9}$ & $1.13\%$ & $+0.998$ & $1.65\%$ \\
     & Final & 219 & $\num{1.34e-9}$ & $1.04\%$ & $+0.999$ & $1.65\%$ \\
   \midrule
   \multirow{8}{*}{Path~B (Direct)}
     & Rapid descent & 1 & $\num{1.11e-7}$ & $0.00\%$ & $+0.941$ & $10.11\%$ \\
     & Excursion onset & 20 & $\num{2.78e-9}$ & $1.56\%$ & $+0.955$ & $2.91\%$ \\
-    & Excursion trough & 21 & $\num{2.62e-9}$ & $1.65\%$ & $+0.958$ & $2.86\%$ \\
+    & Excursion trough & 21 & $\num{2.62e-9}$ & $1.65\%$ & $+0.957$ & $2.82\%$ \\
     & Peak violation & 25 & $\num{3.85e-9}$ & $2.00\%$ & $+0.965$ & $2.73\%$ \\
-    & Rebound peak ($1.68\times$) & 28 & $\num{4.40e-9}$ & $1.91\%$ & $+0.970$ & $2.60\%$ \\
-    & Tol.\ reached ($L < \num{1.4e-9}$) & 59 & $\num{1.40e-9}$ & $1.04\%$ & $+0.998$ & $1.82\%$ \\
-    & $1\%$ above final ($L \le \num{1.355e-9}$) & 89 & $\num{1.35e-9}$ & $1.04\%$ & $+0.998$ & $1.74\%$ \\
+    & Rebound peak ($1.68\times$) & 28 & $\num{4.40e-9}$ & $2.00\%$ & $+0.974$ & $2.65\%$ \\
+    & Tol.\ reached ($L < \num{1.4e-9}$) & 59 & $\num{1.40e-9}$ & $1.22\%$ & $+0.998$ & $1.78\%$ \\
+    & $1\%$ above final ($L \le \num{1.355e-9}$) & 89 & $\num{1.35e-9}$ & $1.13\%$ & $+0.998$ & $1.74\%$ \\
     & Final & 219 & $\num{1.34e-9}$ & $1.04\%$ & $+0.999$ & $1.69\%$ \\
   \midrule
   \multirow{5}{*}{Path~C (Cold start)}
-    & Origin ($\theta = \mathbf{0}$) & 0 & $\num{6.19e-7}$ & $0.00\%$ & $-0.157$ & $29.38\%$ \\
-    & Peak violation & 28 & $\num{6.71e-8}$ & $1.22\%$ & $+0.920$ & $12.45\%$ \\
-    & Tol.\ reached ($L < \num{1.4e-9}$) & 101 & $\num{1.40e-9}$ & $1.13\%$ & $+0.998$ & $1.74\%$ \\
-    & $1\%$ above final ($L \le \num{1.355e-9}$) & 111 & $\num{1.35e-9}$ & $1.04\%$ & $+0.999$ & $1.69\%$ \\
-    & Final & 219 & $\num{1.34e-9}$ & $1.04\%$ & $+0.999$ & $1.69\%$ \\
+    & Origin ($\theta = \mathbf{0}$) & 0 & $\num{6.76e-7}$ & $0.00\%$ & --- & --- \\
+    & Peak violation & 30 & $\num{8.54e-8}$ & $1.22\%$ & --- & --- \\
+    & Tol.\ reached ($L < \num{1.4e-9}$) & 101 & $\num{1.40e-9}$ & $1.13\%$ & --- & --- \\
+    & $1\%$ above final ($L \le \num{1.355e-9}$) & 111 & $\num{1.35e-9}$ & $1.04\%$ & --- & --- \\
+    & Final & 219 & $\num{1.34e-9}$ & $1.04\%$ & --- & --- \\
 \end{tabular}
 \end{ruledtabular}
 \end{table*}
@@ -677,7 +678,7 @@ inheriting boundary excursions upon deployment.
 \end{ruledtabular}
 \footnotetext[1]{Defined as the peak-to-trough ratio $\max_{i > i_{\min}} L_i / L(i_{\min})$ during the excursion window. For the un-rescaled normalized Adam arm, the ratio reaches $834\times$ because the loss descends to $\num{2.8e-10}$ before overshooting violently into the penalty barrier, measuring descent depth and uncompensated step size rather than purely physical instability. Rescaling $\alpha$ alongside the basis stabilizes the rebound to $2.20\times$.}
 \footnotetext[2]{For Path~C ($\theta = \mathbf{0}$), the loss descends monotonically without an excursion trough; rebound ratio is marked N/A ($1.00\times$ trivial). The ablation suite isolates mechanisms on Path~B.}
-\footnotetext[3]{Evaluated at the $N = 220$ benchmark horizon ($L = \num{1.4360e-9}$). Extended optimization up to $450$ steps reaches $L = \num{1.4324e-9}$, settling into an asymptotic limit cycle above the baseline target ($\num{1.3412e-9}$). At matched convergence rate ($76$ steps to $L < \num{1.4e-9}$), full Adam ($\alpha = \num{1.37e-3}$) incurs $1.65\%$ peak violation vs.\ $1.30\%$ for $\beta_1 = 0$, isolating a $1.27\times$ momentum amplification factor.}
+\footnotetext[3]{Evaluated at the $N = 220$ benchmark horizon ($L = \num{1.4360e-9}$). Extended optimization up to $450$ steps reaches $L = \num{1.4324e-9}$, exhibiting a slow monotone crawl along the shallow Gram direction above the baseline target ($\num{1.3412e-9}$). At matched convergence rate ($76$ steps to $L < \num{1.4e-9}$), full Adam ($\alpha = \num{1.37e-3}$) incurs $1.65\%$ peak violation vs.\ $1.30\%$ for $\beta_1 = 0$, isolating a $1.27\times$ momentum amplification factor.}
 \end{table}
 
 Table~\ref{tab:ablation} and Figure~\ref{fig:results}(c) present the ablation
@@ -712,7 +713,7 @@ suite isolating the mechanism of realizability excursions:
     At matched speed, full Adam incurs a peak violation of $1.65\%$, compared to
     $1.30\%$ for $\beta_1 = 0$. First-moment momentum thus accounts for an
     amplification factor of $1.65\% / 1.30\% \approx 1.27\times$ in peak boundary
-    excursion, rather than the un-matched nominal ratio of $1.54\times$ ($2.00\% / 1.30\%$).\footnote{In our pre-registered investigation, extended optimization of the $\beta_1 = 0$ arm up to $450$ steps reached a final loss of $\num{1.4324e-9}$ ($1.068\times$ above the baseline target of $\num{1.3412e-9}$), settling into an asymptotic limit cycle. The matched-loss condition ($L \le \num{1.3412e-9}$) was therefore not achieved by the zero-momentum arm within practical horizons, reinforcing the necessity of comparing optimizers along the matched-convergence-rate Pareto frontier rather than asymptotic loss endpoints.}
+    excursion, rather than the un-matched nominal ratio of $1.54\times$ ($2.00\% / 1.30\%$).\footnote{In our pre-registered investigation, extended optimization of the $\beta_1 = 0$ arm up to $450$ steps reached a final loss of $\num{1.4324e-9}$ ($1.068\times$ above the baseline target of $\num{1.3412e-9}$), exhibiting a slow monotone crawl along the shallow Gram direction. The matched-loss condition ($L \le \num{1.3412e-9}$) was therefore not achieved by the zero-momentum arm within practical horizons, reinforcing the necessity of comparing optimizers along the matched-convergence-rate Pareto frontier rather than asymptotic loss endpoints.}
   \item \textit{Coordinate-wise scale invariance of Adam.}
     Under diagonal scaling of basis tensors $T^{(n)} \to \tilde{T}^{(n)} = T^{(n)}/\|T^{(n)}\|$,
     coordinates transform as $\tilde{\theta}_n = \theta_n\|T^{(n)}\|$, and gradients
@@ -761,19 +762,17 @@ evaluated four controls:
     first drops below Path~A's hop loss ($\num{4.73e-9}$) to $\num{4.34e-9}$
     (with preceding iterate at $\num{5.84e-9}$).
     Following this matched restart, Path~B exhibits a post-restart peak violation
-    of $1.74\%$ accompanied by a $3.12\times$ loss rebound ($\num{2.62e-9} \to \num{8.17e-9}$).
+    of $1.74\%$ at step~21 (climbing from $0.95\%$ at step~17), while the loss
+    continues its monotonic descent toward tolerance without an additional rebound.
 \end{itemize}
 Resetting momentum at matched loss reduces the peak excursion only modestly from
 $2.00\%$ to $1.74\%$, confirming that travel distance across the ill-conditioned
 parameter landscape dominates the excursion, while continuous mid-descent momentum
 provides an incremental amplification of $+0.26\%$.
-Crucially, the restart worsened the loss rebound from $1.68\times$ (uninterrupted Path~B)
-to $3.12\times$: the cold restart introduces the same initial $v = 0$ unconditioned
-sign-step perturbation identified in Path~A's post-hop transient, temporarily kicking
-the optimizer deeper into the barrier. Furthermore, inspection of the per-step
-violation profile reveals that violations were already climbing before the restart
-($0.95\%$ at step~17, rising to $1.22\%$, $1.48\%$, $1.65\%$, and $1.74\%$ across steps~18--21),
-demonstrating that the restart truncated an in-progress boundary traversal rather than preventing one.
+Furthermore, inspection of the per-step violation profile reveals that violations were
+already climbing before the restart ($0.95\%$ at step~17, rising to $1.22\%$, $1.48\%$,
+$1.65\%$, and $1.74\%$ across steps~18--21), demonstrating that the restart merely
+interrupted an in-progress boundary traversal rather than preventing one.
 
 \subsection{Step-Size Pareto Frontier}\label{sec:pareto}
 
@@ -1001,7 +1000,7 @@ non-trivial:
     exact machine-precision scale invariance on normalized bases.
   \item Isolated momentum and travel-distance mechanics via pre-registered controls:
     resetting momentum at matched loss (step~18) yields a post-restart peak of $1.74\%$
-    and $3.12\times$ rebound (Branch~ii occurred), confirming that parameter travel
+    (Branch~ii occurred), confirming that parameter travel
     distance dominates the excursion while momentum provides modest amplification
     ($+0.26\%$), while $\beta_1 = 0$ reduces peak violation to $1.30\%$.
   \item Identified the necessary conditions for design space geometry to become
