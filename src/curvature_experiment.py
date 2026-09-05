@@ -17,7 +17,18 @@ Trajectories (Budget-Matched: 220 Total Steps):
 """
 
 import os
-os.environ['MPLCONFIGDIR'] = os.path.abspath('.cache/matplotlib')
+import sys
+from pathlib import Path
+
+SRC_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SRC_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+PAPER_DIR = REPO_ROOT / "paper"
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+os.environ['MPLCONFIGDIR'] = str(REPO_ROOT / '.cache' / 'matplotlib')
 
 import numpy as np
 import json
@@ -376,7 +387,8 @@ def run_experiment():
         "lambda_sweep": lambda_sweep,
         "target_spec": [mesh.c_mu_true, mesh.c1_true, mesh.c2_true, mesh.c3_true]
     }
-    with open("results_curvature_experiment.json", "w") as f:
+    out_json = DATA_DIR / "results_curvature_experiment.json"
+    with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
 
     plot_comprehensive_results(history_A, history_B, lambda_sweep, 
@@ -479,7 +491,7 @@ def plot_comprehensive_results(hist_A, hist_B, sweep, kappas, theta_A, theta_B, 
     ax4.grid(axis='y', ls="--", alpha=0.3)
 
     plt.tight_layout()
-    out_file = "curvature_results.png"
+    out_file = PAPER_DIR / "curvature_results.png"
     plt.savefig(out_file)
     print(f"\nSaved comprehensive figure to '{out_file}'.")
 

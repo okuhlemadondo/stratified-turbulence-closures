@@ -8,7 +8,13 @@ Panel (c): Ablation bar chart isolating step size, momentum, and basis scaling.
 Panel (d): Gram matrix condition numbers and scale-vs-coupling decomposition.
 """
 import os
-os.environ['MPLCONFIGDIR'] = os.path.abspath('.cache/matplotlib')
+from pathlib import Path
+SRC_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SRC_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+PAPER_DIR = REPO_ROOT / "paper"
+
+os.environ['MPLCONFIGDIR'] = str(REPO_ROOT / '.cache' / 'matplotlib')
 
 import numpy as np
 import json
@@ -17,11 +23,11 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # Load data
-with open('results_curvature_experiment.json') as f:
+with open(DATA_DIR / 'results_curvature_experiment.json') as f:
     orig = json.load(f)
-with open('results_audit_experiments.json') as f:
+with open(DATA_DIR / 'results_audit_experiments.json') as f:
     audit = json.load(f)
-with open('results_round2_controls.json') as f:
+with open(DATA_DIR / 'results_round2_controls.json') as f:
     r2 = json.load(f)
 
 hA = orig['history_A']
@@ -179,6 +185,7 @@ ax.text(0.97, 0.22,
         transform=ax.transAxes, fontsize=8, ha='right', va='bottom',
         bbox=dict(boxstyle='round,pad=0.35', facecolor='white', edgecolor='gray', alpha=0.9))
 
-plt.savefig('curvature_results.png', dpi=250, bbox_inches='tight')
-print("Successfully generated revised curvature_results.png")
+fig_out = PAPER_DIR / 'curvature_results.png'
+plt.savefig(fig_out, dpi=250, bbox_inches='tight')
+print(f"Successfully generated revised {fig_out}")
 plt.close()

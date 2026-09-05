@@ -7,6 +7,17 @@ Visualizes:
 3. Secondary Driving Stress (tau_yy - tau_zz) vs Linear Boussinesq prediction (identically zero).
 """
 
+import os
+import sys
+from pathlib import Path
+
+SRC_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SRC_DIR.parent
+PAPER_DIR = REPO_ROOT / "paper"
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
@@ -75,7 +86,7 @@ def plot_physics():
     ax3.set_aspect('equal')
     
     plt.tight_layout()
-    output_path = "square_duct_physics.png"
+    output_path = PAPER_DIR / "figures" / "square_duct_physics.png"
     plt.savefig(output_path)
     print(f"Physics figure saved to '{output_path}'.")
 

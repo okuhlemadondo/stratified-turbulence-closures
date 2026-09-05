@@ -12,7 +12,18 @@ The goal: determine whether Path B's rebound is caused by:
 """
 
 import os
-os.environ['MPLCONFIGDIR'] = os.path.abspath('.cache/matplotlib')
+import sys
+from pathlib import Path
+
+SRC_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SRC_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+PAPER_DIR = REPO_ROOT / "paper"
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+os.environ['MPLCONFIGDIR'] = str(REPO_ROOT / '.cache' / 'matplotlib')
 
 import numpy as np
 import json
@@ -413,9 +424,10 @@ def main():
         "experiments": sanitize(results),
     }
 
-    with open("results_audit_experiments.json", "w") as f:
+    out_file = DATA_DIR / "results_audit_experiments.json"
+    with open(out_file, "w") as f:
         json.dump(output, f, indent=2)
-    print(f"\nResults saved to results_audit_experiments.json")
+    print(f"\nResults saved to {out_file}")
 
     # ======================================================================
     # 7. DIAGNOSTIC PLOTS
@@ -501,9 +513,10 @@ def main():
         ax.text(x[i] - w / 2, kappas_raw[i] * 1.3, f"{kappas_raw[i]:.1f}", ha='center', fontsize=7)
         ax.text(x[i] + w / 2, kappas_norm_list[i] * 1.3, f"{kappas_norm_list[i]:.1f}", ha='center', fontsize=7)
 
+    fig_out = PAPER_DIR / "figures" / "audit_ablation_results.png"
     plt.tight_layout()
-    plt.savefig("audit_ablation_results.png", dpi=200, bbox_inches='tight')
-    print("Figure saved to audit_ablation_results.png")
+    plt.savefig(fig_out, dpi=200, bbox_inches='tight')
+    print(f"Figure saved to {fig_out}")
     plt.close()
 
 

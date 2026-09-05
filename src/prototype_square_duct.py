@@ -14,7 +14,13 @@ A self-contained prototype demonstrating:
 
 import numpy as np
 import os
+import sys
+from pathlib import Path
 import json
+
+SRC_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SRC_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
 
 # Set seed for reproducible comparison across conditions
 np.random.seed(42)
@@ -467,9 +473,10 @@ def run_experiment():
         print(f"  {name:<25}: Step {step_reached}")
         
     # Save results to JSON
-    with open("results_square_duct_prototype.json", "w") as f:
+    out_json = DATA_DIR / "results_square_duct_prototype.json"
+    with open(out_json, "w") as f:
         json.dump(results, f, indent=2)
-    print("\nSaved detailed results to 'results_square_duct_prototype.json'.")
+    print(f"\nSaved detailed results to '{out_json}'.")
 
 if __name__ == "__main__":
     run_experiment()

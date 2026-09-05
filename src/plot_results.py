@@ -7,14 +7,22 @@ Generates publication-quality figures:
 3. Realization drift and realizability evolution.
 """
 
+import os
+import sys
+from pathlib import Path
 import json
 import numpy as np
 import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+SRC_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SRC_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+PAPER_DIR = REPO_ROOT / "paper"
+
 def plot_experiment():
-    with open("results_square_duct_prototype.json", "r") as f:
+    with open(DATA_DIR / "results_square_duct_prototype.json", "r") as f:
         results = json.load(f)
         
     fig, axes = plt.subplots(1, 2, figsize=(13, 5), dpi=300)
@@ -83,7 +91,7 @@ def plot_experiment():
     ax2.grid(axis='y', ls="--", alpha=0.4)
     
     plt.tight_layout()
-    output_path = "results_square_duct.png"
+    output_path = PAPER_DIR / "figures" / "results_square_duct.png"
     plt.savefig(output_path)
     print(f"Figure saved successfully to '{output_path}'.")
 

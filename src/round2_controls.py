@@ -16,7 +16,17 @@ Plus reporting fixes:
 """
 
 import os
-os.environ['MPLCONFIGDIR'] = os.path.abspath('.cache/matplotlib')
+import sys
+from pathlib import Path
+
+SRC_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SRC_DIR.parent
+DATA_DIR = REPO_ROOT / "data"
+
+if str(SRC_DIR) not in sys.path:
+    sys.path.insert(0, str(SRC_DIR))
+
+os.environ['MPLCONFIGDIR'] = str(REPO_ROOT / '.cache' / 'matplotlib')
 
 import numpy as np
 import json
@@ -540,9 +550,10 @@ def main():
         },
     }
 
-    with open("results_round2_controls.json", "w") as f:
+    out_file = DATA_DIR / "results_round2_controls.json"
+    with open(out_file, "w") as f:
         json.dump(sanitize(results), f, indent=2)
-    print("\nResults saved to results_round2_controls.json")
+    print(f"\nResults saved to {out_file}")
 
 
 if __name__ == "__main__":
