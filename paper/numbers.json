@@ -238,43 +238,43 @@
     "description": "Path C final calibrated loss at step 220"
   },
   "steps_to_tol_14_path_A": {
-    "value": 124,
-    "formatted": "124",
+    "value": 123,
+    "formatted": "123",
     "source_file": "data/results_curvature_experiment.json",
     "generating_script": "src/round3_investigations.py",
     "description": "Steps for Path A to reach L < 1.4e-9 (100 in S1 + 23 in S2)"
   },
   "steps_to_tol_14_path_B": {
-    "value": 60,
-    "formatted": "60",
+    "value": 59,
+    "formatted": "59",
     "source_file": "data/results_curvature_experiment.json",
     "generating_script": "src/round3_investigations.py",
     "description": "Steps for Path B to reach L < 1.4e-9"
   },
   "steps_to_tol_14_path_C": {
-    "value": 102,
-    "formatted": "102",
+    "value": 101,
+    "formatted": "101",
     "source_file": "data/results_audit_experiments.json",
     "generating_script": "src/round3_investigations.py",
     "description": "Steps for Path C to reach L < 1.4e-9"
   },
   "steps_to_tol_1pct_path_A": {
-    "value": 127,
-    "formatted": "127",
+    "value": 126,
+    "formatted": "126",
     "source_file": "data/results_curvature_experiment.json",
     "generating_script": "src/round3_investigations.py",
     "description": "Steps for Path A to reach L <= 1.3546e-9 (1% above final loss)"
   },
   "steps_to_tol_1pct_path_B": {
-    "value": 90,
-    "formatted": "90",
+    "value": 89,
+    "formatted": "89",
     "source_file": "data/results_curvature_experiment.json",
     "generating_script": "src/round3_investigations.py",
     "description": "Steps for Path B to reach L <= 1.3546e-9 (1% above final loss)"
   },
   "steps_to_tol_1pct_path_C": {
-    "value": 112,
-    "formatted": "112",
+    "value": 111,
+    "formatted": "111",
     "source_file": "data/results_audit_experiments.json",
     "generating_script": "src/round3_investigations.py",
     "description": "Steps for Path C to reach L <= 1.3546e-9 (1% above final loss)"
@@ -358,6 +358,52 @@
     "json_path": "B6_per_coordinate_adam.peak_viol_norm_percoord",
     "generating_script": "src/round3_investigations.py",
     "description": "Path B with normalized basis and per-coordinate Adam peak violation"
+  },
+  "b2_loss_before_restart_step17": {
+    "value": 5.839047611748329e-09,
+    "formatted": "5.84e-09",
+    "source_file": "data/results_round3_investigations.json",
+    "json_path": "B2_matched_restart_step18.history.loss[17]",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Path B loss at step 17 immediately preceding restart"
+  },
+  "b2_loss_at_restart_step18": {
+    "value": 4.343150471939988e-09,
+    "formatted": "4.34e-09",
+    "source_file": "data/results_round3_investigations.json",
+    "json_path": "B2_matched_restart_step18.history.loss[18]",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Path B loss at step 18 (first step below Path A hop loss 4.73e-9)"
+  },
+  "matched_rate_steps": {
+    "value": 76,
+    "formatted": "76",
+    "source_file": "data/results_round3_investigations.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Steps to L < 1.4e-9 matched between full Adam (alpha=1.37e-3) and beta1=0 (alpha=2e-3)"
+  },
+  "adam_matched_rate_peak_viol": {
+    "value": 1.649305555555558,
+    "formatted": "1.65%",
+    "source_file": "data/results_round3_investigations.json",
+    "json_path": "B8_stepsize_sweep.adam[5].peak_viol",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Full Adam peak violation at matched convergence rate (76 steps)"
+  },
+  "beta1_zero_matched_rate_peak_viol": {
+    "value": 1.302083333333337,
+    "formatted": "1.30%",
+    "source_file": "data/results_round2_controls.json",
+    "json_path": "control_3_no_momentum.path_B.viol",
+    "generating_script": "src/round2_controls.py",
+    "description": "Adam beta1=0 peak violation at matched convergence rate (76 steps)"
+  },
+  "momentum_matched_rate_amplification": {
+    "value": 1.266666666666665,
+    "formatted": "1.27x",
+    "source_file": "data/results_round3_investigations.json",
+    "generating_script": "src/round3_investigations.py",
+    "description": "Momentum excursion amplification factor at matched convergence rate (1.65% / 1.30%)"
   },
   "param_distance_A_B": {
     "value": 3.162355807659343e-05,

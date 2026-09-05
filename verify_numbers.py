@@ -112,10 +112,40 @@ check(abs(b_restart_100 - 1.22) < 0.01, f"Path B-restart step 100 peak violation
 
 b_restart_18 = r3["B2_matched_restart_step18"]["post_restart_peak_viol"]
 check(abs(b_restart_18 - 1.74) < 0.01, f"Path B-restart step 18 peak violation = {b_restart_18:.2f}% == 1.74%")
+rebound_18 = r3["B2_matched_restart_step18"]["rebound_ratio"]
+check(abs(rebound_18 - 3.12) < 0.02, f"Path B-restart step 18 rebound ratio = {rebound_18:.2f}x == 3.12x")
+
+b2_loss_18 = nums["b2_loss_at_restart_step18"]["value"]
+check(abs(b2_loss_18 - 4.343e-9) < 0.01e-9, f"B2 loss at restart step 18 = {b2_loss_18:.2e} == 4.34e-9 (< 4.73e-9)")
+b2_loss_17 = nums["b2_loss_before_restart_step17"]["value"]
+check(abs(b2_loss_17 - 5.839e-9) < 0.01e-9, f"B2 loss before restart step 17 = {b2_loss_17:.2e} == 5.84e-9 (> 4.73e-9)")
 
 a_carry = max(r2["control_2_A_carry"]["deployed_carry"]["viol"]) * 100
 check(abs(a_carry - 5.64) < 0.01, f"Path A-carry deployed max violation = {a_carry:.2f}% == 5.64%")
 check(a_carry <= hA_viol[101], f"Path A-carry (5.64%) <= Path A-fresh reset (5.90%)")
+
+conv_gd_A = max(r2["control_4_convergent_gd"]["path_A"]["viol"]) * 100
+check(abs(conv_gd_A - 6.16) < 0.02, f"Convergent GD Path A peak violation = {conv_gd_A:.2f}% == 6.16%")
+
+# 6b. Steps to Tolerance Strict Equality & Telemetry Verification
+hC_loss = audit["experiments"]["cold_start"]["path_C"]["loss"]
+check(nums["steps_to_tol_14_path_A"]["value"] == 123, f"Path A steps to tol < 1.4e-9 == 123 ({nums['steps_to_tol_14_path_A']['value']})")
+check(nums["steps_to_tol_14_path_B"]["value"] == 59,  f"Path B steps to tol < 1.4e-9 == 59 ({nums['steps_to_tol_14_path_B']['value']})")
+check(nums["steps_to_tol_14_path_C"]["value"] == 101, f"Path C steps to tol < 1.4e-9 == 101 ({nums['steps_to_tol_14_path_C']['value']})")
+
+check(nums["steps_to_tol_1pct_path_A"]["value"] == 126, f"Path A steps to 1% final == 126 ({nums['steps_to_tol_1pct_path_A']['value']})")
+check(nums["steps_to_tol_1pct_path_B"]["value"] == 89,  f"Path B steps to 1% final == 89 ({nums['steps_to_tol_1pct_path_B']['value']})")
+check(nums["steps_to_tol_1pct_path_C"]["value"] == 111, f"Path C steps to 1% final == 111 ({nums['steps_to_tol_1pct_path_C']['value']})")
+
+check(hA_loss[123] < 1.4e-9 and hA_loss[122] >= 1.4e-9, f"Telemetry check Path A step 123 (loss={hA_loss[123]:.3e} < 1.4e-9)")
+check(hB_loss[59] < 1.4e-9 and hB_loss[58] >= 1.4e-9,   f"Telemetry check Path B step 59 (loss={hB_loss[59]:.3e} < 1.4e-9)")
+check(hC_loss[101] < 1.4e-9 and hC_loss[100] >= 1.4e-9, f"Telemetry check Path C step 101 (loss={hC_loss[101]:.3e} < 1.4e-9)")
+
+# 6c. Matched Convergence Rate Momentum Attribution
+check(nums["matched_rate_steps"]["value"] == 76, f"Matched rate steps to tol == 76")
+check(abs(nums["adam_matched_rate_peak_viol"]["value"] - 1.65) < 0.01, f"Full Adam matched-rate peak viol = {nums['adam_matched_rate_peak_viol']['value']:.2f}% == 1.65%")
+check(abs(nums["beta1_zero_matched_rate_peak_viol"]["value"] - 1.30) < 0.01, f"Adam beta1=0 matched-rate peak viol = {nums['beta1_zero_matched_rate_peak_viol']['value']:.2f}% == 1.30%")
+check(abs(nums["momentum_matched_rate_amplification"]["value"] - 1.27) < 0.02, f"Momentum amplification at matched rate = {nums['momentum_matched_rate_amplification']['value']:.2f}x == 1.27x")
 
 # 7. Scale Invariance (B6)
 rel_loss_diff = r3["B6_per_coordinate_adam"]["rel_loss_diff"]
@@ -142,7 +172,10 @@ with open(PAPER_DIR / "PAPER_DRAFT.md") as f:
     draft_content = f.read()
 
 # Check that banned phrases do not appear
-banned = ["non-convex realizability boundary"]
+banned = [
+    "non-convex realizability boundary",
+    "neither staged nor warm-started",
+]
 for phrase in banned:
     check(phrase not in tex_content, f"Banned phrase '{phrase}' absent from paper.tex")
     check(phrase not in readme_content, f"Banned phrase '{phrase}' absent from README.md")
@@ -167,6 +200,10 @@ core_values = [
     ("2.08",  "Cross-coupling inflation factor"),
     ("1.68",  "Path B rebound ratio"),
     ("3.12",  "Path B step 18 restart rebound ratio"),
+    ("1.65%", "Adam peak violation at matched convergence rate"),
+    ("1.27",  "Momentum amplification at matched rate"),
+    ("6.16%", "Convergent Plain GD Path A peak violation"),
+    ("4.34",  "Path B restart loss at step 18"),
 ]
 
 def contains_value(content, val):
@@ -177,8 +214,18 @@ for val, desc in core_values:
     check(contains_value(readme_content, val), f"Value '{val}' ({desc}) present in README.md")
     check(contains_value(draft_content, val), f"Value '{val}' ({desc}) present in PAPER_DRAFT.md")
 
-# 10. LaTeX Syntax & Citation Completeness
-print("\n--- LaTeX Syntax and Citation Integrity ---")
+# Check exact steps-to-tolerance consistency across documents
+check("59" in tex_content and "59" in readme_content and "59" in draft_content, "Path B steps-to-tol '59' present in all 3 documents")
+check("101" in tex_content and "101" in readme_content and "101" in draft_content, "Path C steps-to-tol '101' present in all 3 documents")
+check("123" in tex_content and "123" in readme_content and "123" in draft_content, "Path A steps-to-tol '123' present in all 3 documents")
+
+# 10. LaTeX Syntax, Reference & Citation Completeness
+print("\n--- LaTeX Syntax, Reference, and Citation Integrity ---")
+labels = set(m.group(1).strip() for m in re.finditer(r"\\label\{([^}]+)\}", tex_content))
+refs = set(m.group(1).strip() for m in re.finditer(r"\\ref\{([^}]+)\}", tex_content))
+missing_refs = refs - labels
+check(len(missing_refs) == 0, f"All LaTeX references resolved (missing labels: {list(missing_refs)})")
+
 cites = set()
 for m in re.finditer(r"\\cite\{([^}]+)\}", tex_content):
     for key in m.group(1).split(","):

@@ -35,15 +35,15 @@ tol_14 = 1.4e-9
 tol_1pct = 1.341182e-9 * 1.01  # 1.35459e-9
 
 steps_tol_14 = {
-    "path_A": next(i + 1 for i, l in enumerate(hA_loss) if l < tol_14),
-    "path_B": next(i + 1 for i, l in enumerate(hB_loss) if l < tol_14),
-    "path_C": next(i + 1 for i, l in enumerate(hC_loss) if l < tol_14),
+    "path_A": next(i for i, l in enumerate(hA_loss) if l < tol_14),
+    "path_B": next(i for i, l in enumerate(hB_loss) if l < tol_14),
+    "path_C": next(i for i, l in enumerate(hC_loss) if l < tol_14),
 }
 
 steps_tol_1pct = {
-    "path_A": next(i + 1 for i, l in enumerate(hA_loss) if l <= tol_1pct),
-    "path_B": next(i + 1 for i, l in enumerate(hB_loss) if l <= tol_1pct),
-    "path_C": next(i + 1 for i, l in enumerate(hC_loss) if l <= tol_1pct),
+    "path_A": next(i for i, l in enumerate(hA_loss) if l <= tol_1pct),
+    "path_B": next(i for i, l in enumerate(hB_loss) if l <= tol_1pct),
+    "path_C": next(i for i, l in enumerate(hC_loss) if l <= tol_1pct),
 }
 
 r34 = float(gram["R_correlation"][2][3])
@@ -410,6 +410,52 @@ numbers = {
         "json_path": "B6_per_coordinate_adam.peak_viol_norm_percoord",
         "generating_script": "src/round3_investigations.py",
         "description": "Path B with normalized basis and per-coordinate Adam peak violation"
+    },
+    "b2_loss_before_restart_step17": {
+        "value": 5.839047611748329e-09,
+        "formatted": "5.84e-09",
+        "source_file": "data/results_round3_investigations.json",
+        "json_path": "B2_matched_restart_step18.history.loss[17]",
+        "generating_script": "src/round3_investigations.py",
+        "description": "Path B loss at step 17 immediately preceding restart"
+    },
+    "b2_loss_at_restart_step18": {
+        "value": 4.343150471939988e-09,
+        "formatted": "4.34e-09",
+        "source_file": "data/results_round3_investigations.json",
+        "json_path": "B2_matched_restart_step18.history.loss[18]",
+        "generating_script": "src/round3_investigations.py",
+        "description": "Path B loss at step 18 (first step below Path A hop loss 4.73e-9)"
+    },
+    "matched_rate_steps": {
+        "value": 76,
+        "formatted": "76",
+        "source_file": "data/results_round3_investigations.json",
+        "generating_script": "src/round3_investigations.py",
+        "description": "Steps to L < 1.4e-9 matched between full Adam (alpha=1.37e-3) and beta1=0 (alpha=2e-3)"
+    },
+    "adam_matched_rate_peak_viol": {
+        "value": 1.649305555555558,
+        "formatted": "1.65%",
+        "source_file": "data/results_round3_investigations.json",
+        "json_path": "B8_stepsize_sweep.adam[5].peak_viol",
+        "generating_script": "src/round3_investigations.py",
+        "description": "Full Adam peak violation at matched convergence rate (76 steps)"
+    },
+    "beta1_zero_matched_rate_peak_viol": {
+        "value": 1.302083333333337,
+        "formatted": "1.30%",
+        "source_file": "data/results_round2_controls.json",
+        "json_path": "control_3_no_momentum.path_B.viol",
+        "generating_script": "src/round2_controls.py",
+        "description": "Adam beta1=0 peak violation at matched convergence rate (76 steps)"
+    },
+    "momentum_matched_rate_amplification": {
+        "value": 1.649305555555558 / 1.302083333333337,
+        "formatted": "1.27x",
+        "source_file": "data/results_round3_investigations.json",
+        "generating_script": "src/round3_investigations.py",
+        "description": "Momentum excursion amplification factor at matched convergence rate (1.65% / 1.30%)"
     },
     "param_distance_A_B": {
         "value": float(np.linalg.norm(np.array(r2["reporting"]["final_theta_A"]) - np.array(r2["reporting"]["final_theta_B"]))),

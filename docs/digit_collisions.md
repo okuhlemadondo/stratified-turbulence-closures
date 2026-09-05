@@ -28,12 +28,37 @@ This document records the results of a mechanical scan across all numerical valu
 
 ---
 
-### Collision 3: Scaffold Peak ($6.08\%$) vs. Convergent Plain GD Peaks ($6.16\% \text{--} 6.25\%$)
+### Collision 3: The $6.08\% \text{--} 6.25\%$ Cluster (Corner Cell Quantization)
 
-- **Occurrence A**: Path A Stratum-1 scaffold peak violation = $6.08\%$ (step 38 of 100).
-- **Occurrence B**: Path A with convergent Plain GD ($\alpha = 7323.77$) peak violation = $6.16\%$.
-- **Occurrence C**: Path B with convergent Plain GD ($\alpha = 7323.77$) peak violation = $6.25\%$.
-- **Verdict**: **Geometric boundary artifact**. The $6.08\% \text{--} 6.25\%$ cluster corresponds to the geometric fraction of the duct grid ($48 \times 48 = 2304$ cells) where the unconstrained uncalibrated model produces negative eigenvalues before the penalty $\lambda_{\mathrm{realiz}} = 150$ enforces realizability. Specifically, $6.08\% = 140/2304$ cells and $6.25\% = 144/2304$ cells (a difference of just 4 cells near the duct corner).
+- **Occurrence A**: Path A Stratum-1 scaffold peak violation at $\lambda = 150$: **$6.08\%$** ($140/2304$ cells).
+- **Occurrence B**: Path A deployed peak violation at $\lambda = 0$ (unconstrained): **$6.08\%$** ($140/2304$ cells).
+- **Occurrence C**: Path A with convergent Plain GD ($\alpha = 7323.77$): **$6.16\%$** ($142/2304$ cells).
+- **Occurrence D**: Path B with convergent Plain GD ($\alpha = 7323.77$): **$6.25\%$** ($144/2304$ cells).
+- **Occurrence E**: Path A scaffold peak violation at $\lambda = 0$ (unconstrained): **$6.25\%$** ($144/2304$ cells).
+- **Verdict**: **Grid cell quantization artifact**. The $6.08\% \text{--} 6.25\%$ cluster corresponds to the discrete geometric fraction of the duct grid ($48 \times 48 = 2304$ cells) where the unconstrained or under-penalized model produces negative eigenvalues before the penalty $\lambda_{\mathrm{realiz}}$ pulls the iterate back toward the boundary. Specifically:
+  - $140/2304 = 6.076\% \approx 6.08\%$
+  - $142/2304 = 6.163\% \approx 6.16\%$
+  - $144/2304 = 6.250\% = 6.25\%$
+  The differences represent just 2 to 4 corner grid cells near the duct bisector walls.
+
+---
+
+### Collision 4: The $1.74\%$ Values (B2 Restart vs. Cold Start $\lambda = 0$)
+
+- **Occurrence A**: Path B-restart at step 18 post-restart peak violation: **$1.74\%$** (Table IV/Section IV E).
+  - *Full precision*: $40 / 2304 = 1.7361\% \approx 1.74\%$.
+- **Occurrence B**: Path C (cold start) peak violation at $\lambda = 0$ (unconstrained): **$1.74\%$** (Table VI).
+  - *Full precision*: $40 / 2304 = 1.7361\% \approx 1.74\%$.
+- **Verdict**: **Identical cell count in boundary region**. Exactly 40 grid cells ($1.736\%$) violate the non-negativity constraint in the duct corner when the parameter trajectory enters the unconstrained or post-restart boundary layer.
+
+---
+
+### Collision 5: The $1.30\%$ Values ($\beta_1 = 0$, $\lambda = 1500$, and Adam Sweep)
+
+- **Occurrence A**: Path B Adam with $\beta_1 = 0$ (no momentum) peak violation: **$1.30\%$** ($30/2304 = 1.3021\%$).
+- **Occurrence B**: Path B peak violation under stiff penalty ($\lambda = 1500$): **$1.30\%$** ($30/2304 = 1.3021\%$).
+- **Occurrence C**: Adam step-size sweep at $\alpha = 2.85 \times 10^{-4}$ and $\alpha = 4.81 \times 10^{-4}$: **$1.30\%$** ($30/2304 = 1.3021\%$).
+- **Verdict**: **Quantized discrete threshold**. The integer fraction $30/2304 \approx 1.30\%$ represents the discrete plateau where the realizability penalty barrier balances the unmodeled target error in the 30 cells nearest the duct corners. Different parameter trajectories that brush this barrier saturate at this identical cell count.
 
 ---
 
